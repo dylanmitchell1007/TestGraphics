@@ -9,6 +9,7 @@
 #include <glm/fwd.hpp>
 #include <glm/common.hpp>
 #include <glm/ext.hpp>
+#include <glm/mat4x4.hpp>
 
 #include <Transform.h>
 #include <Camera.h>
@@ -39,13 +40,13 @@ void RenderingGeometryApp::startup()
 	m_fov = glm::quarter_pi<float>();
 	m_aspectRatio = 16 / 9.f;
 	m_near = .1f;
-	m_far = 1000;
+	m_far = 1000.f;
 	m_top = 50;
 	m_bottom = -50;
 	m_left = -50;
 	m_right = 50;
 
-	const glm::vec3 eye = glm::vec3(15, 15, 45);//camera in world is at positive 10
+	const glm::vec3 eye = glm::vec3(10, 10, 5);//camera in world is at positive 10
 	const glm::vec3 target = glm::vec3(0);
 	const glm::vec3 up = glm::vec3(0, 1, 0);
 
@@ -56,11 +57,11 @@ void RenderingGeometryApp::startup()
 	setKeyCallback(key_callback);
 	setScrollCallback(scroll_callback);
 
-	Vertex a = { glm::vec4(-5,  0, 0, 1)		, glm::vec4(1, 0, 0, .5) };
-	Vertex b = { glm::vec4(5,  0, 0, 1)			, glm::vec4(0, 1, 0, .5) };
-	Vertex c = { glm::vec4(5, -5, 0, 1)			, glm::vec4(0, 0, 1, .5) };
-	Vertex d = { glm::vec4(-5, -5, 0, 1)		, glm::vec4(1, 0, 0, .5) };
-	Vertex e = { glm::vec4(-5,  5, 0, 1)		, glm::vec4(0, 1, 0, .5) };
+	Vertex a = { glm::vec4(-0.5,  0, 0, 1)		, glm::vec4(1, 0, 0, .5) };
+	Vertex b = { glm::vec4(0.5,  0, 0, 1)			, glm::vec4(0, 1, 0, .5) };
+	Vertex c = { glm::vec4(0.5, -0.5, 0, 1)			, glm::vec4(0, 0, 1, .5) };
+	Vertex d = { glm::vec4(-0.5, -0.5, 0, 1)		, glm::vec4(1, 0, 0, .5) };
+	Vertex e = { glm::vec4(-0.5,  0.5, 0, 1)		, glm::vec4(0, 1, 0, .5) };
 
 	std::vector<Vertex> myObject = { a, b, c, d, e };
 	std::vector<unsigned int> objectIndices = { 0, 1, 2, 0, 2, 3, 0, 4, 1 };
@@ -153,14 +154,23 @@ void RenderingGeometryApp::update(float delta_time)
 	m_camera->update(delta_time);
 }
 
+glm::mat4 aObject = glm::mat4(1);
 void RenderingGeometryApp::draw()
 {
 	//draw object
 	this->myshader->bind();
 
+	auto translation = glm::mat4(
+		glm::vec4(1, 0, 0, 0),
+		glm::vec4(0, 1, 0, 0),
+		glm::vec4(0, 0, 1, 0),
+		glm::vec4(10, 10, 10, 1)
+	);
+	aObject = aObject * translation;
+
 	unsigned int projectionViewUniform = this->myshader->getUniform("ProjectionViewWorld");
 	glUniformMatrix4fv(projectionViewUniform, 1, GL_FALSE, glm::value_ptr(m_camera->projectionView));
-	this->object->draw(GL_TRIANGLE_STRIP);
+	this->object->draw(GL_TRIANGLES);
 	this->myshader->unbind();
 
 #pragma region UI

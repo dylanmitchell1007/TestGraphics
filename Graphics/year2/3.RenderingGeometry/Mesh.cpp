@@ -100,6 +100,7 @@ void Mesh::unbind()
 void Mesh::draw(GLuint mode)
 {
 	this->bind();
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	glDrawElements(mode, this->index_count, GL_UNSIGNED_INT, 0);
 	this->unbind();	
 }

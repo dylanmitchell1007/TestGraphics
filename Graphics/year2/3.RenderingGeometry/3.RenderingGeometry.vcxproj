@@ -71,7 +71,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>$(SolutionDir)builds\$(ProjectName)\$(Configuration)\$(PlatformTarget)\</OutDir>
     <IntDir>$(SolutionDir)tmp\$(ProjectName)\$(Configuration)\</IntDir>
-    <IncludePath>$(IncludePath);$(SolutionDir)dep\glfw\include;$(SolutionDir)dep\glm;$(SolutionDir)bootstrap;$(ProjectDir)inc;$(SolutionDir)dep\imgui;</IncludePath>
+    <IncludePath>$(IncludePath);$(SolutionDir)dep\glfw\include;$(SolutionDir)dep\glm;$(SolutionDir)bootstrap;$(ProjectDir)inc;$(SolutionDir)dep\imgui</IncludePath>
     <LibraryPath>$(LibraryPath);$(SolutionDir)dep\bootstrap;$(SolutionDir)dep\glfw\lib-vc2015;</LibraryPath>
     <SourcePath>$(VC_SourcePath);$(ProjectDir)src</SourcePath>
   </PropertyGroup>

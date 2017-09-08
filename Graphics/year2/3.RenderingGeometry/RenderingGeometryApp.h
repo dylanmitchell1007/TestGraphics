@@ -1,4 +1,5 @@
 #pragma once
+#include "Shader.h"
 #include "Mesh.h"
 #include "Application.h"
 #include <glm/glm.hpp>
@@ -36,6 +37,8 @@ private:
 
 	float m_runningTime;
 
+	Shader* myshader;
+	Mesh* object;
 	Camera* m_camera;
 	Transform* m_earth;
 	Transform* m_sun;

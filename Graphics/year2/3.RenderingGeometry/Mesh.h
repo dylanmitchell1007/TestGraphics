@@ -1,4 +1,5 @@
 #pragma once
+#include <gl_core_4_4.h>
 #include <glm/glm.hpp>
 #include <vector>
 struct Vertex
@@ -18,7 +19,7 @@ public:
 
 	void bind();
 	void unbind();
-
+	void draw(GLuint mode);
 	unsigned int index_count;
 	unsigned int vertex_count;
 

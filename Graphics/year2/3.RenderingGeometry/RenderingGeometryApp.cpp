@@ -12,6 +12,7 @@
 
 #include <Transform.h>
 #include <Camera.h>
+#include "Shader.h"
 
 
 
@@ -30,6 +31,7 @@ perspective(true)
 RenderingGeometryApp::~RenderingGeometryApp()
 {
 }
+
 
 void RenderingGeometryApp::startup()
 {
@@ -59,16 +61,21 @@ void RenderingGeometryApp::startup()
 	Vertex c = { glm::vec4(5, -5, 0, 1)			, glm::vec4(0, 0, 1, .5) };
 	Vertex d = { glm::vec4(-5, -5, 0, 1)		, glm::vec4(1, 0, 0, .5) };
 	Vertex e = { glm::vec4(-5,  5, 0, 1)		, glm::vec4(0, 1, 0, .5) };
-	
+
+	std::vector<Vertex> myObject = { a, b, c, d, e };
+	std::vector<unsigned int> objectIndices = { 0, 1, 2, 0, 2, 3, 0, 4, 1 };
 	//create vertex array
-	
+	this->object = new Mesh();
+	this->object->initialize(myObject, objectIndices);
 	//create buffers
-	
+	this->object->create_buffers();
 	//buffer data
-	
+
 	//setup vertex attributes
 
 	//build shader
+	this->myshader = new Shader();
+	this->myshader->defaultLoad();
 }
 
 void RenderingGeometryApp::update(float delta_time)
@@ -148,8 +155,14 @@ void RenderingGeometryApp::update(float delta_time)
 
 void RenderingGeometryApp::draw()
 {
+	//draw object
+	this->myshader->bind();
 
-	
+	unsigned int projectionViewUniform = this->myshader->getUniform("ProjectionViewWorld");
+	glUniformMatrix4fv(projectionViewUniform, 1, GL_FALSE, glm::value_ptr(m_camera->projectionView));
+	this->object->draw(GL_TRIANGLE_STRIP);
+	this->myshader->unbind();
+
 #pragma region UI
 
 	ImGui_ImplGlfwGL3_NewFrame();
@@ -163,19 +176,21 @@ void RenderingGeometryApp::draw()
 	ImGui::Text("delta time : %f", m_deltaTime);
 	ImGui::End();
 
-
-
 #pragma endregion UI
-
-
-	
 }
-void halfcircle(float radius, unsigned int point)
+std::vector<glm::vec3> halfcircle(float radius, unsigned int points)
+{
+	std::vector<glm::vec3> tmpArray;
+
+	for (int i = 0; i < points; i++)
 	{
-		if (radius <= 0)
-			
-		
+		auto slice = 3.14 / (points - 1);
+		auto angle = slice * i;
+		glm::vec3 vertex = glm::vec3(cosf(angle), sinf(angle), 0);
+		tmpArray.push_back(vertex);
 	}
+	return tmpArray;
+}
 void RenderingGeometryApp::shutdown()
 {
 }

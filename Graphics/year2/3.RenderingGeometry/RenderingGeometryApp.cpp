@@ -14,7 +14,7 @@
 #include <Transform.h>
 #include <Camera.h>
 #include "Shader.h"
-
+#include <iostream>
 
 
 RenderingGeometryApp::RenderingGeometryApp() : m_runningTime(0), m_camera(nullptr), m_mouseX(0),
@@ -134,13 +134,13 @@ void RenderingGeometryApp::update(float delta_time)
 
 
 	if (glfwGetKey(m_window, 'W'))
-		m_camera->transform.translate(glm::vec3(0, 0, -1));
+		m_camera->transform.translate(glm::vec3(0, 0, -10));				
 	if (glfwGetKey(m_window, 'S'))
-		m_camera->transform.translate(glm::vec3(0, 0, 1));
+		m_camera->transform.translate(glm::vec3(0, 0, 10));
 	if (glfwGetKey(m_window, 'A'))
-		m_camera->transform.translate(glm::vec3(-1, 0, 0));
+		m_camera->transform.translate(glm::vec3(-10, 0, 0));
 	if (glfwGetKey(m_window, 'D'))
-		m_camera->transform.translate(glm::vec3(1, 0, 0));
+		m_camera->transform.translate(glm::vec3(10, 0, 0));
 
 	if (glfwGetKey(m_window, 'F'))
 	{
@@ -152,6 +152,10 @@ void RenderingGeometryApp::update(float delta_time)
 		m_camera->setOrthographic(m_left, m_right, m_bottom, m_top, m_near, m_far);
 
 	m_camera->update(delta_time);
+	auto camPos = m_camera->view[3];
+	
+	system("cls");
+	std::cout << camPos.x << "/" << camPos.y << "/" << camPos.z;
 }
 
 glm::mat4 aObject = glm::mat4(1);
@@ -166,7 +170,7 @@ void RenderingGeometryApp::draw()
 		glm::vec4(0, 0, 1, 0),
 		glm::vec4(10, 10, 10, 1)
 	);
-	aObject = aObject * translation;
+	//aObject = aObject * translation;
 
 	unsigned int projectionViewUniform = this->myshader->getUniform("ProjectionViewWorld");
 	glUniformMatrix4fv(projectionViewUniform, 1, GL_FALSE, glm::value_ptr(m_camera->projectionView));

@@ -1,4 +1,3 @@
-
 #include "RenderingGeometryApp.h"
 
 int main()

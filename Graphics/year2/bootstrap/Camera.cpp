@@ -29,7 +29,7 @@ Camera::~Camera()
 
 void Camera::update(float deltatime)
 {
-	m_view = glm::inverse(m_transform.World);	
+	m_view = glm::inverse(m_transform.World);
 	m_projectionView = m_projection * m_view;
 }
 

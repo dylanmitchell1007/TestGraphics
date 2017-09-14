@@ -76,7 +76,7 @@ void Shader::defaultLoad()
 							out vec4 vColor; \
 							uniform mat4 ProjectionViewWorld; \
 							void main() { vColor = Color; \
-							gl_Position = ProjectionViewWorld = Position) }";
+							gl_Position = ProjectionViewWorld * Position; }";
 	fsSource = "#version 410\n \
 							in vec4 vColor; \
 							out vec4 FragColor; \
@@ -86,8 +86,33 @@ void Shader::defaultLoad()
 
 	glShaderSource(vertexShader, 1, (const char **)&vsSource, 0);
 	glCompileShader(vertexShader);
+	int vertSuccess = GL_FALSE;
+	glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &vertSuccess);
+	if (vertSuccess == GL_FALSE)
+	{
+		int infoLogLength = 0; 
+		glGetShaderiv(vertexShader, GL_INFO_LOG_LENGTH, &infoLogLength);
+		char* infoLog = new char[infoLogLength]; 
+		glGetProgramInfoLog(m_program,infoLogLength, 0, infoLog); 
+		printf("Error: Failed to compile vertex shader program!\n");
+		printf("%s\n", infoLog);
+		delete[] infoLog;
+	}
+
 	glShaderSource(fragmentShader, 1, (const char**)&fsSource, 0);
 	glCompileShader(fragmentShader);
+	int fragSuccess = GL_FALSE;
+	glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &fragSuccess);
+	if (fragSuccess == GL_FALSE)
+	{
+		int infoLogLength = 0;
+		glGetShaderiv(fragmentShader, GL_INFO_LOG_LENGTH, &infoLogLength);
+		char* infoLog = new char[infoLogLength];
+		glGetProgramInfoLog(m_program, infoLogLength, 0, infoLog);
+		printf("Error: Failed to compile fragment shader program!\n");
+		printf("%s\n", infoLog);
+		delete[] infoLog;
+	}
 
 	m_program = glCreateProgram();
 
@@ -96,13 +121,17 @@ void Shader::defaultLoad()
 	glLinkProgram(m_program);
 
 	int success = GL_FALSE;
-	int infoLogLength = 0;
-	glGetProgramiv(m_program, GL_INFO_LOG_LENGTH, &infoLogLength);
-	char* infoLog = new char[infoLogLength + 1];
-	glGetProgramInfoLog(m_program, infoLogLength, 0, infoLog);
-	delete[] infoLog;
-
-	
+	glGetProgramiv(m_program, GL_LINK_STATUS, &success);
+	if (success == GL_FALSE)
+	{
+		int infoLogLength = 0;
+		glGetProgramiv(m_program, GL_INFO_LOG_LENGTH, &infoLogLength);
+		char* infoLog = new char[infoLogLength];
+		glGetProgramInfoLog(m_program, infoLogLength, 0, infoLog);
+		printf("Error: Failed to link shader program!\n");
+		printf("%s\n", infoLog);
+		delete[] infoLog;
+	}
 }
 unsigned int Shader::getUniform(const char * name)
 	{

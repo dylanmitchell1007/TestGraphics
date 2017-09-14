@@ -14,7 +14,6 @@ public:
 	void setOrthographic(float left, float right, float bottom, float top, float near, float far);
 	void setProjection(bool perspective);
 	
-	
 	Transform& transform;
 	glm::mat4& view;
 	glm::mat4& projection; 

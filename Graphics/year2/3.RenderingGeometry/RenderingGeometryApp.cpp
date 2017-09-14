@@ -46,7 +46,7 @@ void RenderingGeometryApp::startup()
 	m_left = -50;
 	m_right = 50;
 
-	const glm::vec3 eye = glm::vec3(10, 10, 5);//camera in world is at positive 10
+	const glm::vec3 eye = glm::vec3(10, 10, 10);//camera in world is at positive 10
 	const glm::vec3 target = glm::vec3(0);
 	const glm::vec3 up = glm::vec3(0, 1, 0);
 
@@ -63,11 +63,22 @@ void RenderingGeometryApp::startup()
 	Vertex d = { glm::vec4(-0.5, -0.5, 0, 1)		, glm::vec4(1, 0, 0, .5) };
 	Vertex e = { glm::vec4(-0.5,  0.5, 0, 1)		, glm::vec4(0, 1, 0, .5) };
 
+	Vertex f = { glm::vec4(0, 0, 0, 1)		, glm::vec4(1, 0, 0, .5) };
+	Vertex g = { glm::vec4(5,  0, 0, 1)		, glm::vec4(1, 0, 0, .5) };
+	Vertex h = { glm::vec4(5,  0, 5, 1)		, glm::vec4(1, 0, 0, .5) };
+	Vertex i = { glm::vec4(0,  0, 5, 1)		, glm::vec4(1, 0, 0, .5) };
+
+
+	std::vector<Vertex> myPlane = { f, g, h, i };
+	std::vector<unsigned int> planeIndices = { 0,1,2,3 };
+
 	std::vector<Vertex> myObject = { a, b, c, d, e };
 	std::vector<unsigned int> objectIndices = { 0, 1, 2, 0, 2, 3, 0, 4, 1 };
 	//create vertex array
+	/*this->object = new Mesh();
+	this->object->initialize(myObject, objectIndices);*/
 	this->object = new Mesh();
-	this->object->initialize(myObject, objectIndices);
+	this->object->initialize(myPlane, planeIndices);
 	//create buffers
 	this->object->create_buffers();
 	//buffer data
@@ -134,17 +145,73 @@ void RenderingGeometryApp::update(float delta_time)
 
 
 	if (glfwGetKey(m_window, 'W'))
-		m_camera->transform.translate(glm::vec3(0, 0, -10));				
+	{
+		//m_camera->transform.translate(glm::vec3(0, 0, -10));
+
+		auto V = m_camera->view;
+		auto T = glm::mat4(
+			glm::vec4(1, 0, 0, 0),
+			glm::vec4(0, 1, 0, 0),
+			glm::vec4(0, 0, 1, 0),
+			glm::vec4(0, 0, -10, 1)
+		);
+
+		auto view = V * T;
+		auto world = glm::inverse(view);
+		m_camera->transform.setWorld(world);
+	}
+		
 	if (glfwGetKey(m_window, 'S'))
-		m_camera->transform.translate(glm::vec3(0, 0, 10));
+	{
+		//m_camera->transform.translate(glm::vec3(0, 0, 10));
+		auto V = m_camera->view;
+		auto T = glm::mat4(
+			glm::vec4(1, 0, 0, 0),
+			glm::vec4(0, 1, 0, 0),
+			glm::vec4(0, 0, 1, 0),
+			glm::vec4(0, 0, 10, 1)
+		);
+
+		auto view = V * T;
+		auto world = glm::inverse(view);
+		m_camera->transform.setWorld(world);
+	}
+		
 	if (glfwGetKey(m_window, 'A'))
-		m_camera->transform.translate(glm::vec3(-10, 0, 0));
+	{
+		//m_camera->transform.translate(glm::vec3(-10, 0, 0));
+		auto V = m_camera->view;
+		auto T = glm::mat4(
+			glm::vec4(1, 0, 0, 0),
+			glm::vec4(0, 1, 0, 0),
+			glm::vec4(0, 0, 1, 0),
+			glm::vec4(-10, 0, 0, 1)
+		);
+
+		auto view = V * T;
+		auto world = glm::inverse(view);
+		m_camera->transform.setWorld(world);
+	}
+		
 	if (glfwGetKey(m_window, 'D'))
-		m_camera->transform.translate(glm::vec3(10, 0, 0));
+	{
+		//m_camera->transform.translate(glm::vec3(10, 0, 0));
+		auto V = m_camera->view;
+		auto T = glm::mat4(
+			glm::vec4(1, 0, 0, 0),
+			glm::vec4(0, 1, 0, 0),
+			glm::vec4(0, 0, 1, 0),
+			glm::vec4(10, 0, 0, 1)
+		);
+
+		auto view = V * T;
+		auto world = glm::inverse(view);
+		m_camera->transform.setWorld(world);
+	}	
 
 	if (glfwGetKey(m_window, 'F'))
 	{
-		m_camera->setLookAt(m_camera->transform.World[3].xyz(), glm::vec3(0), glm::vec3(0, 1, 0));
+		//m_camera->setLookAt(m_camera->transform.World[3].xyz(), glm::vec3(0), glm::vec3(0, 1, 0));
 	}
 
 	(perspective) ?
@@ -152,12 +219,13 @@ void RenderingGeometryApp::update(float delta_time)
 		m_camera->setOrthographic(m_left, m_right, m_bottom, m_top, m_near, m_far);
 
 	m_camera->update(delta_time);
+
 	auto camPos = m_camera->view[3];
 	
 	system("cls");
 	std::cout << camPos.x << "/" << camPos.y << "/" << camPos.z;
 }
-
+glm::mat4 aPlane = glm::mat4(2);
 glm::mat4 aObject = glm::mat4(1);
 void RenderingGeometryApp::draw()
 {
@@ -169,12 +237,12 @@ void RenderingGeometryApp::draw()
 		glm::vec4(0, 1, 0, 0),
 		glm::vec4(0, 0, 1, 0),
 		glm::vec4(10, 10, 10, 1)
+	
 	);
 	//aObject = aObject * translation;
-
 	unsigned int projectionViewUniform = this->myshader->getUniform("ProjectionViewWorld");
-	glUniformMatrix4fv(projectionViewUniform, 1, GL_FALSE, glm::value_ptr(m_camera->projectionView));
-	this->object->draw(GL_TRIANGLES);
+	glUniformMatrix4fv(projectionViewUniform, 1, GL_FALSE, glm::value_ptr(m_camera->projectionView * aObject));
+	this->object->draw(GL_QUADS);
 	this->myshader->unbind();
 
 #pragma region UI

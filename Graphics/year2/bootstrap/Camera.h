@@ -1,40 +1,33 @@
 #pragma once
-#include <glm\mat4x4.hpp>
-#include "Transform.h"
+#include "gl_core_4_4.h"
+#include <mat4x4.hpp>
+#include <vec3.hpp>
+#include <vec4.hpp>
+
 
 class Camera
+
 {
 public:
 	Camera();
-	virtual ~Camera();
-
-	virtual void update(float deltaTime);
-	void setPerspective(float fieldOfView, float aspectRatio, float near, float far);	
-	void setLookAt(glm::vec3 from, glm::vec3 to, glm::vec3 up);
-	void setOrthographic(float left, float right, float bottom, float top, float near, float far);
-	void setProjection(bool perspective);
-	
-	Transform& transform;
-	glm::mat4& view;
-	glm::mat4& projection; 
-	glm::mat4& projectionView;
-	
+	~Camera();
+	void update(float deltatime = 0);
+	void setPerspective(float FOV, float AR, float m_near, float m_far);
+	void setLookAt(glm::vec3 eye, glm::vec3 center, glm::vec3 up);
+	void setPosition(glm::vec3 position);
+	void setOrtho(float left, float right, float top, float bottom, float farClip, float nearClip);
+	glm::mat4 Getview();
+	glm::mat4 getWorldTransform();
+	glm::vec3 m_position;
+	glm::mat4 m_view;
+	glm::vec3 focus;
+	glm::mat4 getProjection();
+	glm::mat4 getProjectionView();
 
 private:
-	
-	float m_fov;
-	float m_aspectRatio;
-	float m_near;
-	float m_far;
-	float m_top;
-	float m_bottom;
-	float m_left;
-	float m_right;	
-
-	Transform m_transform;
-	glm::mat4 m_world;
-	glm::mat4 m_view;
-	glm::mat4 m_projection;	
-	glm::mat4 m_projectionView;
-	glm::vec3 m_target;
+	void updateProjectionViewTransform();
+	glm::mat4 worldTransform;
+	glm::mat4 viewTransform;
+	glm::mat4 projectionTransform;
+	glm::mat4 projectionViewTransform;
 };

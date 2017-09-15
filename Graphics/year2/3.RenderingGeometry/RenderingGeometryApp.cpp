@@ -1,265 +1,23 @@
-#define GLM_FORCE_SWIZZLE
-
 #include "RenderingGeometryApp.h"
-#include "gl_core_4_4.h"
-#include <GLFW/glfw3.h>
+#include <gl_core_4_4.h>
+#include <GLFW\glfw3.h>
 
-#include <imgui.h>
-#include <imgui_impl_glfw_gl3.h>
-#include <glm/fwd.hpp>
-#include <glm/common.hpp>
-#include <glm/ext.hpp>
-#include <glm/mat4x4.hpp>
-
-#include <Transform.h>
+#include <vector>
+#include <vec4.hpp>
 #include <Camera.h>
+#include <vec3.hpp>
+#include <ext.hpp>
+#include "Mesh.h"
 #include "Shader.h"
-#include <iostream>
-
-
-RenderingGeometryApp::RenderingGeometryApp() : m_runningTime(0), m_camera(nullptr), m_mouseX(0),
-m_mouseY(0),
-m_mouseButtonDown(false),
-m_mouseButtonUp(false), m_isDragging(false), m_deltaX(0), m_deltaY(0), m_startX(0),
-m_startY(0), m_endX(0),
-m_endY(0),
-m_angleAxis(true),
-perspective(true)
+#include <mat4x4.hpp>
+RenderingGeometryApp::RenderingGeometryApp()
 {
-}
-
-
+};
 RenderingGeometryApp::~RenderingGeometryApp()
 {
+
 }
 
-
-void RenderingGeometryApp::startup()
-{
-	//setup camera info
-	m_fov = glm::quarter_pi<float>();
-	m_aspectRatio = 16 / 9.f;
-	m_near = .1f;
-	m_far = 1000.f;
-	m_top = 50;
-	m_bottom = -50;
-	m_left = -50;
-	m_right = 50;
-
-	const glm::vec3 eye = glm::vec3(10, 10, 10);//camera in world is at positive 10
-	const glm::vec3 target = glm::vec3(0);
-	const glm::vec3 up = glm::vec3(0, 1, 0);
-
-	m_camera = new Camera();
-	m_camera->setPerspective(m_fov, m_aspectRatio, m_near, m_far);
-	m_camera->setLookAt(eye, target, up);
-
-	setKeyCallback(key_callback);
-	setScrollCallback(scroll_callback);
-
-	Vertex a = { glm::vec4(-0.5,  0, 0, 1)		, glm::vec4(1, 0, 0, .5) };
-	Vertex b = { glm::vec4(0.5,  0, 0, 1)			, glm::vec4(0, 1, 0, .5) };
-	Vertex c = { glm::vec4(0.5, -0.5, 0, 1)			, glm::vec4(0, 0, 1, .5) };
-	Vertex d = { glm::vec4(-0.5, -0.5, 0, 1)		, glm::vec4(1, 0, 0, .5) };
-	Vertex e = { glm::vec4(-0.5,  0.5, 0, 1)		, glm::vec4(0, 1, 0, .5) };
-
-	Vertex f = { glm::vec4(0, 0, 0, 1)		, glm::vec4(1, 0, 0, .5) };
-	Vertex g = { glm::vec4(5,  0, 0, 1)		, glm::vec4(1, 0, 0, .5) };
-	Vertex h = { glm::vec4(5,  0, 5, 1)		, glm::vec4(1, 0, 0, .5) };
-	Vertex i = { glm::vec4(0,  0, 5, 1)		, glm::vec4(1, 0, 0, .5) };
-
-
-	std::vector<Vertex> myPlane = { f, g, h, i };
-	std::vector<unsigned int> planeIndices = { 0,1,2,3 };
-
-	std::vector<Vertex> myObject = { a, b, c, d, e };
-	std::vector<unsigned int> objectIndices = { 0, 1, 2, 0, 2, 3, 0, 4, 1 };
-	//create vertex array
-	/*this->object = new Mesh();
-	this->object->initialize(myObject, objectIndices);*/
-	this->object = new Mesh();
-	this->object->initialize(myPlane, planeIndices);
-	//create buffers
-	this->object->create_buffers();
-	//buffer data
-
-	//setup vertex attributes
-
-	//build shader
-	this->myshader = new Shader();
-	this->myshader->defaultLoad();
-}
-
-void RenderingGeometryApp::update(float delta_time)
-{
-	m_runningTime += delta_time;
-	m_deltaTime = delta_time;
-	m_mouseButtonDown = glfwGetMouseButton(m_window, GLFW_MOUSE_BUTTON_2) == GLFW_PRESS;
-	m_mouseButtonUp = glfwGetMouseButton(m_window, GLFW_MOUSE_BUTTON_2) == GLFW_RELEASE;
-
-	glfwGetCursorPos(m_window, &m_mouseX, &m_mouseY);
-	//if clicked
-	if (m_mouseButtonUp)
-	{
-		m_isDragging = false;
-		m_deltaX = m_deltaY = 0;
-		m_startX = m_startY = 0;
-		m_endX = m_endY = 0;
-	}
-
-	if (m_mouseButtonDown)
-	{
-		if (m_isDragging == false)
-		{
-			m_isDragging = true;
-			glfwGetCursorPos(m_window, &m_startX, &m_startY);
-		}
-
-		m_deltaX = (m_mouseX - m_startX);
-		m_deltaY = (m_mouseY - m_startY);
-	}
-
-	static int width, height;
-
-	glfwGetWindowSize(m_window, &width, &height);
-
-	if (m_deltaY != 0)
-	{
-		float angle = (float)(m_deltaY / height) * delta_time;
-
-		if (m_angleAxis)
-			m_camera->transform.rotateAround(-angle, m_camera->transform.right.xyz());
-		else
-			m_camera->transform.rotate(angle, m_camera->transform.right.xyz());
-	}
-
-	if (m_deltaX != 0)
-	{
-		float angle = (float)(m_deltaX / width) * delta_time;
-
-		if (m_angleAxis)
-			m_camera->transform.rotateAround(-angle, glm::vec3(0, 1, 0));
-		else
-			m_camera->transform.rotate(angle, glm::vec3(0, 1, 0));
-	}
-
-
-	if (glfwGetKey(m_window, 'W'))
-	{
-		//m_camera->transform.translate(glm::vec3(0, 0, -10));
-
-		auto V = m_camera->view;
-		auto T = glm::mat4(
-			glm::vec4(1, 0, 0, 0),
-			glm::vec4(0, 1, 0, 0),
-			glm::vec4(0, 0, 1, 0),
-			glm::vec4(0, 0, -10, 1)
-		);
-
-		auto view = V * T;
-		auto world = glm::inverse(view);
-		m_camera->transform.setWorld(world);
-	}
-		
-	if (glfwGetKey(m_window, 'S'))
-	{
-		//m_camera->transform.translate(glm::vec3(0, 0, 10));
-		auto V = m_camera->view;
-		auto T = glm::mat4(
-			glm::vec4(1, 0, 0, 0),
-			glm::vec4(0, 1, 0, 0),
-			glm::vec4(0, 0, 1, 0),
-			glm::vec4(0, 0, 10, 1)
-		);
-
-		auto view = V * T;
-		auto world = glm::inverse(view);
-		m_camera->transform.setWorld(world);
-	}
-		
-	if (glfwGetKey(m_window, 'A'))
-	{
-		//m_camera->transform.translate(glm::vec3(-10, 0, 0));
-		auto V = m_camera->view;
-		auto T = glm::mat4(
-			glm::vec4(1, 0, 0, 0),
-			glm::vec4(0, 1, 0, 0),
-			glm::vec4(0, 0, 1, 0),
-			glm::vec4(-10, 0, 0, 1)
-		);
-
-		auto view = V * T;
-		auto world = glm::inverse(view);
-		m_camera->transform.setWorld(world);
-	}
-		
-	if (glfwGetKey(m_window, 'D'))
-	{
-		//m_camera->transform.translate(glm::vec3(10, 0, 0));
-		auto V = m_camera->view;
-		auto T = glm::mat4(
-			glm::vec4(1, 0, 0, 0),
-			glm::vec4(0, 1, 0, 0),
-			glm::vec4(0, 0, 1, 0),
-			glm::vec4(10, 0, 0, 1)
-		);
-
-		auto view = V * T;
-		auto world = glm::inverse(view);
-		m_camera->transform.setWorld(world);
-	}	
-
-	if (glfwGetKey(m_window, 'F'))
-	{
-		//m_camera->setLookAt(m_camera->transform.World[3].xyz(), glm::vec3(0), glm::vec3(0, 1, 0));
-	}
-
-	(perspective) ?
-		m_camera->setPerspective(m_fov, m_aspectRatio, m_near, m_far) :
-		m_camera->setOrthographic(m_left, m_right, m_bottom, m_top, m_near, m_far);
-
-	m_camera->update(delta_time);
-
-	auto camPos = m_camera->view[3];
-	
-	system("cls");
-	std::cout << camPos.x << "/" << camPos.y << "/" << camPos.z;
-}
-glm::mat4 aPlane = glm::mat4(2);
-glm::mat4 aObject = glm::mat4(1);
-void RenderingGeometryApp::draw()
-{
-	//draw object
-	this->myshader->bind();
-
-	auto translation = glm::mat4(
-		glm::vec4(1, 0, 0, 0),
-		glm::vec4(0, 1, 0, 0),
-		glm::vec4(0, 0, 1, 0),
-		glm::vec4(10, 10, 10, 1)
-	
-	);
-	//aObject = aObject * translation;
-	unsigned int projectionViewUniform = this->myshader->getUniform("ProjectionViewWorld");
-	glUniformMatrix4fv(projectionViewUniform, 1, GL_FALSE, glm::value_ptr(m_camera->projectionView * aObject));
-	this->object->draw(GL_QUADS);
-	this->myshader->unbind();
-
-#pragma region UI
-
-	ImGui_ImplGlfwGL3_NewFrame();
-	ImGui::Begin("Menu", (bool*)0, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
-	m_gameover = ImGui::Button("Quit?", ImVec2(100, 50));
-	ImGui::End();
-
-
-	ImGui::Begin("Rendering Options 2", (bool*)0, ImGuiWindowFlags_NoResize);
-	ImGui::Text("Running Time: %f", m_runningTime);
-	ImGui::Text("delta time : %f", m_deltaTime);
-	ImGui::End();
-
-#pragma endregion UI
-}
 std::vector<glm::vec3> halfcircle(float radius, unsigned int points)
 {
 	std::vector<glm::vec3> tmpArray;
@@ -273,33 +31,184 @@ std::vector<glm::vec3> halfcircle(float radius, unsigned int points)
 	}
 	return tmpArray;
 }
+Mesh* generateCube()
+{
+	Mesh* cube = new Mesh();
+	//front Bottom Left
+	Vertex j = { glm::vec4(0.0f, 0.0f, 0, 1.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f) };
+	//front Bottom Right
+	Vertex k = { glm::vec4(1.0f, 0.0f, 0, 1.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f) };
+	//front Top Right
+	Vertex l = { glm::vec4(1.0f, 1.0f, 0, 1.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f) };
+	//front Top Left
+	Vertex m = { glm::vec4(0.0f, 1.0f, 0, 1.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f) };
+	//Back Bottom Left
+	Vertex n = { glm::vec4(0, 0.0f, 1, 1.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f) };
+	//Back Bottom Right
+	Vertex o = { glm::vec4(1.0f, 0.0f, 1, 1.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f) };
+	//Back Top Right
+	Vertex p = { glm::vec4(1.0f, 1.0f, 1, 1.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f) };
+	//Back Top Left
+	Vertex q = { glm::vec4(0.0f, 1.0f, 1, 1.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f) };
+
+	std::vector<Vertex> Cubevert = { j, k, l, m, n, o, p, q };
+	std::vector<unsigned int> Cubeindices = {
+		0,  1,  3,  3,  1,  2,   //frontface
+		4,  5,  7, 7,  5,  6,  //backface
+		4, 0, 7, 7, 0, 3,  //leftface
+		1,  5,  2,  2, 5,  6, //rightface
+		3, 2, 7, 7, 2, 6,  //topface
+		0, 1, 4, 4, 1, 5 }; //bottom face
+	cube->initialize(Cubevert, Cubeindices);
+
+	return cube;
+}
+Mesh* generatePlane()
+{
+	Mesh* plane = new Mesh();
+	//bottomleft
+	Vertex f = { glm::vec4(0, 0, 0, 1)		, glm::vec4(0.5, 0, 0, .5) };
+	//bottomright
+	Vertex g = { glm::vec4(5,  0, 0, 1)		, glm::vec4(0.5, 0, 0, .5) };
+	//topright
+	Vertex h = { glm::vec4(5,  0, 5, 1)		, glm::vec4(0.5, 0, 0, .5) };
+	//topleft
+	Vertex i = { glm::vec4(0,  0, 5, 1)		, glm::vec4(0.5, 0, 0, .5) };
+
+	//Plane Vertex
+	std::vector<Vertex> myPlane = { f, g, h, i };
+	//Plane Indices
+	std::vector<unsigned int> planeIndices = { 0,1,3,3,2,1 };
+	plane->initialize(myPlane, planeIndices);
+	return plane;
+}
+//Mesh* generateSphere()
+//{
+//
+//
+//}
+
+
+
+
+
+void RenderingGeometryApp::startup()
+{
+
+	const glm::vec3 eye = glm::vec3(10, 10, 10);//camera in world is at positive 10
+	const glm::vec3 target = glm::vec3(0);
+	const glm::vec3 up = glm::vec3(0, 1, 0);
+
+	m_camera = new Camera();
+	/*m_camera->setPerspective(m_fov, m_aspectRatio, m_near, m_far);*/
+	m_camera->setLookAt(eye, target, up);
+
+
+	Vertex a = { glm::vec4(-0.5,  0, 0, 1)		, glm::vec4(1, 0, 0, .5) };
+	Vertex b = { glm::vec4(0.5,  0, 0, 1)			, glm::vec4(0, 1, 0, .5) };
+	Vertex c = { glm::vec4(0.5, -0.5, 0, 1)			, glm::vec4(0, 0, 1, .5) };
+	Vertex d = { glm::vec4(-0.5, -0.5, 0, 1)		, glm::vec4(1, 0, 0, .5) };
+	Vertex e = { glm::vec4(-0.5,  0.5, 0, 1)		, glm::vec4(0, 1, 0, .5) };
+
+
+
+	//Face of Cube
+
+
+
+	//Cube Indices
+
+
+
+	std::vector<Vertex> myObject = { a, b, c, d, e };
+
+	std::vector<unsigned int> objectIndices = { 0, 1, 2, 0, 2, 3, 0, 4, 1 };
+
+
+	//create vertex array
+	//this->object = new Mesh();
+	object = generateCube();
+	this->newobject = generatePlane();
+	/*this->object = new Mesh();
+	this->object->initialize(myObject, objectIndices);*/
+	//this->object = new Mesh();
+	//this->object->initialize(myPlane, planeIndices);
+	//create buffers
+	this->object->create_buffers();
+	//buffer data
+
+	//setup vertex attributes
+
+	//build shader
+	this->myshader = new Shader();
+	this->myshader->defaultLoad();
+}
+
+void RenderingGeometryApp::update(float delta_time)
+{
+	if (glfwGetKey(_window, 'W') == GLFW_PRESS)
+	{
+		m_camera->setPosition(m_camera->getWorldTransform()[3] -= m_camera->getWorldTransform()[1]);
+	}
+	if (glfwGetKey(_window, 'D') == GLFW_PRESS)
+	{
+		m_camera->setPosition(m_camera->getWorldTransform()[3] += m_camera->getWorldTransform()[0]);
+	}
+	if (glfwGetKey(_window, 'A') == GLFW_PRESS)
+	{
+		m_camera->setPosition(m_camera->getWorldTransform()[3] -= m_camera->getWorldTransform()[0]);
+	}
+	if (glfwGetKey(_window, 'Q') == GLFW_PRESS)
+	{
+		m_camera->setPosition(m_camera->getWorldTransform()[3] += m_camera->getWorldTransform()[1]);
+	}
+	if (glfwGetKey(_window, 'E') == GLFW_PRESS)
+	{
+		m_camera->setPosition(m_camera->getWorldTransform()[3] -= m_camera->getWorldTransform()[1]);
+	}
+	/*if (glfwGetKey(_window, 'F') == GLFW_PRESS)
+	{
+	m_camera->setLookAt(m_camera->setPosition(), vec3(0, 0, 0), vec3(0, 1, 0));*/
+	//m_runningTime += delta_time;
+	//deltaTime = delta_time;
+
+	//(perspective) ?
+	//	m_camera->setPerspective(m_fov, m_aspectRatio, m_near, m_far) :
+	//	m_camera->setOrtho(m_left, m_right, m_bottom, m_top, m_near, m_far);
+
+	m_camera->update(delta_time);
+
+
+
+}
+glm::mat4 aPlane = glm::mat4(2);
+glm::mat4 aObject = glm::mat4(1);
+void RenderingGeometryApp::draw()
+{
+	//draw object
+	this->myshader->bind();
+
+	auto translation = glm::mat4(
+		glm::vec4(1, 0, 0, 0),
+		glm::vec4(0, 1, 0, 0),
+		glm::vec4(0, 0, 1, 0),
+		glm::vec4(10, 10, 10, 1)
+
+	);
+	//aObject = aObject * translation;
+	unsigned int projectionViewUniform = this->myshader->getUniform("ProjectionViewWorld");
+	glUniformMatrix4fv(projectionViewUniform, 1, GL_FALSE, glm::value_ptr(m_camera->getProjectionView() * aObject));
+	this->object->draw(GL_TRIANGLES);
+
+
+	unsigned int newprojectionViewUniform = this->myshader->getUniform("ProjectionViewWorld");
+	glUniformMatrix4fv(newprojectionViewUniform, 1, GL_FALSE, glm::value_ptr(m_camera->getProjectionView() * aPlane));
+	this->newobject->draw(GL_TRIANGLES);
+	this->myshader->unbind();
+
+
+}
+
 void RenderingGeometryApp::shutdown()
 {
-}
-
-void RenderingGeometryApp::setKeyCallback(KeyFunc func)
-{
-	glfwSetWindowUserPointer(m_window, this);
-	glfwSetKeyCallback(m_window, func);
-}
-
-void RenderingGeometryApp::setScrollCallback(ScrollFunc func)
-{
-	glfwSetWindowUserPointer(m_window, this);
-	glfwSetScrollCallback(m_window, func);
-}
-
-void RenderingGeometryApp::scroll_callback(GLFWwindow * window, double xoffset, double yoffset)
-{
-	RenderingGeometryApp* instance = (RenderingGeometryApp*)glfwGetWindowUserPointer(window);
-	instance->m_camera->transform.translate(glm::vec3(0, -yoffset, 0));
-}
-
-void RenderingGeometryApp::key_callback(GLFWwindow * window, int key, int scancode, int action, int mods)
-{
-	RenderingGeometryApp* instance = (RenderingGeometryApp*)glfwGetWindowUserPointer(window);
-	Camera* camera = instance->m_camera;
-	if (key == GLFW_KEY_SPACE)
-		camera->setLookAt(glm::vec3(10, 10, -10), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
-
 }

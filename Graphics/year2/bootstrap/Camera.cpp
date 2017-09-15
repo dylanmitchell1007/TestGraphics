@@ -1,125 +1,109 @@
-#define GLM_FORCE_SWIZZLE
 #include "Camera.h"
-#include <glm/ext.hpp>
+#include "glfw3.h"
+#include "gl_core_4_4.h"
+#include <cassert>
+#include <ext.hpp>
 
-Camera::Camera() :
-	transform(m_transform),
-	view(m_view),
-	projection(m_projection),
-	m_fov(0),
-	m_aspectRatio(0),
-	m_near(0),
-	m_far(0),
-	m_top(100),
-	m_bottom(-100),
-	m_left(-100),
-	m_right(100),
-	m_world(1),
-	m_view(1),
-	m_projection(1),
-	m_target(0),
-	m_projectionView(1),
-	projectionView(m_projectionView)
-{
-}
-
-Camera::~Camera()
-{
-}
-
+Camera::Camera() {};
+Camera::~Camera() {};
 void Camera::update(float deltatime)
 {
-	m_view = glm::inverse(m_transform.World);
-	m_projectionView = m_projection * m_view;
 }
 
-void Camera::setPerspective(float fieldOfView, float aspectRatio, float near, float far)
+//FOV = Field of View || AR = Apsect Ratio || near = near ||
+void Camera::setPerspective(float FOV, float AR, float m_near, float m_far)
 {
-	m_fov = fieldOfView;
-	m_aspectRatio = aspectRatio;
-	m_near = near;
-	m_far = far;
+	auto x = 1.f / (FOV * tan(FOV / 2.f));
+	auto y = 1.f / (FOV * tan(FOV / 2.f));
+	auto z = -1.f * ((2.f * m_far * m_near) / (m_far - m_near));
+	auto w = -1.f * ((2.f * m_far * m_near) / (m_far - m_near));
 
-	const float x = 1.f / (m_aspectRatio * tan(m_fov / 2.f));
-	const float y = 1.f / tan(m_fov / 2.f);
-	const float z = -1.f * ((m_far + m_near) / (m_far - m_near));
-	const float w = -1.f * ((2.f * m_far * m_near) / (m_far - m_near));
-
-	const glm::mat4 projection = glm::mat4(
-		glm::vec4(x, 0, 0, 0),//xcol
-		glm::vec4(0, y, 0, 0),//ycol
-		glm::vec4(0, 0, z, -1),//zcol
-		glm::vec4(0, 0, w, 0));//wcol or translation
-
-	auto expected = glm::perspective(fieldOfView, aspectRatio, near, far);
-
-	assert(expected == projection);
-
-	m_projection = projection;
+	this->projectionTransform = glm::mat4(
+		glm::vec4(x, 0, 0, 0),
+		glm::vec4(0, y, 0, 0),
+		glm::vec4(0, 0, z, -1.f),
+		glm::vec4(0, 0, w, 0));
+	auto copy = glm::perspective(FOV, 16 / 9.f, 0.1f, 10.f);
+	assert(this->projectionTransform == copy);
+	
 }
-
-void Camera::setLookAt(glm::vec3 eye, glm::vec3 target, glm::vec3 up)
+void Camera::setOrtho(float left, float right, float top, float bottom, float farClip, float nearClip)
 {
-	m_target = target;
-	const glm::vec3 z = normalize(eye - target);
-	const glm::vec3 x = normalize(cross(up, z));
-	const glm::vec3 y = cross(z, x);
+	auto X = 2 / (right - left);
+	auto Y = 2 / (top - bottom);
+	auto Z = -2 / (farClip - nearClip);
 
-	const glm::mat4 V = glm::mat4(
-		glm::vec4(x.x, y.x, z.x, 0),
-		glm::vec4(x.y, y.y, z.y, 0),
-		glm::vec4(x.z, y.z, z.z, 0),
-		glm::vec4(0.0, 0.0, 0.0, 1)
-	);
+	auto Xx = -((right + left) / (right - left));
+	auto Yy = -((top + bottom) / (top - bottom));
+	auto Zz = -((farClip + nearClip) / (farClip - nearClip));
 
-	const glm::mat4 T = glm::mat4(
+	glm::mat4 Projection = glm::mat4(
+		glm::vec4(X, 0, 0, 0),
+		glm::vec4(0, Y, 0, 0),
+		glm::vec4(0, 0, Z, 0),
+		glm::vec4(Xx, Yy, Zz, 1));
+
+	glm::mat4 glmOrtho = glm::ortho(left, right, bottom, top, nearClip, farClip);
+
+	assert(Projection == glmOrtho);
+
+	this->projectionTransform = Projection;
+	this->updateProjectionViewTransform();
+}
+void Camera::setLookAt(glm::vec3 eye, glm::vec3 center, glm::vec3 up)
+{
+	glm::vec3 z = glm::normalize(eye - center);
+	glm::vec3 x = glm::normalize(glm::cross(up, z));
+	glm::vec3 y = glm::cross(z, x);
+	glm::mat4 v = glm::mat4(
+		x.x, y.x, z.x, 0,
+		x.y, y.y, z.y, 0,
+		x.z, y.z, z.z, 0,
+		0, 0, 0, 1);
+
+
+	glm::mat4 translation = glm::mat4(
+		1, 0, 0, 0,
+		0, 1, 0, 0,
+		0, 0, 1, 0,
+		-eye.x, -eye.y, -eye.z, 1);
+	glm::mat4 view = v * translation;
+	m_view = view;
+	glm::mat4 lookat = glm::lookAt(eye, center, up);
+	assert(view == lookat);
+	worldTransform = glm::inverse(view);
+
+	
+
+}
+void Camera::setPosition(glm::vec3 position)
+{
+	auto t = glm::mat4(
 		glm::vec4(1, 0, 0, 0),
 		glm::vec4(0, 1, 0, 0),
 		glm::vec4(0, 0, 1, 0),
-		glm::vec4(-eye, 1)
-	);
-
-	glm::mat4 actual = V * T;
-	glm::mat4 expected = lookAt(eye, target, up);
-	assert(actual == expected);	
-	m_view = V * T;
-	m_world = glm::inverse(m_view);
-	m_transform.setWorld(m_world);	
+		glm::vec4(position.x, position.y, position.z, 1));
+	this->viewTransform = t * this->viewTransform;
+	this->worldTransform = glm::inverse(this->viewTransform);
+}
+glm::mat4 Camera::getWorldTransform()
+{
+	return this->worldTransform;
+}
+glm::mat4 Camera::Getview()
+{
+	return this->viewTransform;
+}
+glm::mat4 Camera::getProjection()
+{
+	return this->projectionTransform;
+}
+glm::mat4 Camera::getProjectionView()
+{
+	return this->projectionViewTransform;
 }
 
-void Camera::setOrthographic(float left, float right, float bottom, float top, float near, float far)
+void Camera::updateProjectionViewTransform()
 {
-	const float sx = 2 / (right - left);
-	const float sy = 2 / (top - bottom);
-	const float sz = 2 / (far - near);
-
-	const float tx = (left + right) / -2.f;
-	const float ty = (top + bottom) / -2.f;
-	const float tz = (far + near) / -2.f;
-
-	const glm::mat4 S = {
-		sx, 0, 0, 0,
-		0, sy, 0, 0,
-		0, 0, sz, 0,
-		0, 0, 0, 1
-	};
-
-	const glm::mat4 T = {
-		1, 0, 0, 0,
-		0, 1, 0, 0,
-		0, 0, -1, 0,
-		tx, ty, tz, 1
-	};
-
-	glm::mat4 actual = S * T;
-	auto expected = glm::ortho(left, right, bottom, top, near, far);
-	//assert(actual == expected);
-	m_projection = actual;
-}
-
-void Camera::setProjection(bool perspective)
-{
-	perspective
-		? setPerspective(m_fov, m_aspectRatio, m_near, m_far)
-		: setOrthographic(m_left, m_right, m_bottom, m_top, m_near, m_far);
+	this->projectionViewTransform = this->projectionTransform * this->viewTransform;
 }

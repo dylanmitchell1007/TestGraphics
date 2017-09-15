@@ -1,6 +1,6 @@
 #pragma once
 #include <gl_core_4_4.h>
-#include <glm/glm.hpp>
+#include <glm.hpp>
 #include <vector>
 struct Vertex
 {

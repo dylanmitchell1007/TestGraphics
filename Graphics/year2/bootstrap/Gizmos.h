@@ -1,6 +1,7 @@
 #pragma once
 
-#include <glm/fwd.hpp>
+//#include <glm/fwd.hpp>
+#include <fwd.hpp>
 
 class Gizmos {
 public:

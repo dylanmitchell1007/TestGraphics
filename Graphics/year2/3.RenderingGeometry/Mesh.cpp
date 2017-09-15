@@ -1,7 +1,7 @@
 #include "Mesh.h"
-#include <glm\fwd.hpp>
-#include <glm\ext.hpp>
-#include <glm\glm.hpp>
+#include <fwd.hpp>
+#include <ext.hpp>
+#include <glm.hpp>
 
 Mesh::Mesh() {};
 Mesh::~Mesh() {};

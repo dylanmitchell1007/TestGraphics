@@ -115,9 +115,9 @@ void RenderingGeometryApp::startup()
 
 
 	//create vertex array
-	this->cube_Mesh = new Mesh();	
-	generateCube(this->cube_Mesh);
-	this->cube_Mesh->create_buffers();
+	cube_Mesh = new Mesh();
+	generateCube(cube_Mesh);
+	cube_Mesh->create_buffers();
 	
 	this->plane_Mesh = new Mesh();
 	generatePlane(this->plane_Mesh);

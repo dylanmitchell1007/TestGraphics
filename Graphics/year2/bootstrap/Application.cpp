@@ -1,8 +1,6 @@
 #include "Application.h"
 #include "gl_core_4_4.h"
 #include <GLFW\glfw3.h>
-#include <imgui.h>
-#include "imgui_impl_glfw_gl3.h"
 
 Application::Application() : m_window(nullptr)
 {	
@@ -33,11 +31,11 @@ void Application::run(const char * title, unsigned int width, unsigned int heigh
 
 	glEnable(GL_DEPTH_TEST);
 	
-	
-	ImGui_ImplGlfwGL3_Init(m_window, true);
-	ImGuiIO& io = ImGui::GetIO();
-	io.DisplaySize.x = width;
-	io.DisplaySize.y = height;
+	//
+	//ImGui_ImplGlfwGL3_Init(m_window, true);
+	//ImGuiIO& io = ImGui::GetIO();
+	//io.DisplaySize.x = width;
+	//io.DisplaySize.y = height;
 	double prevTime = glfwGetTime();
 	double currTime = 0;
 	double deltaTime = 0;
@@ -50,7 +48,7 @@ void Application::run(const char * title, unsigned int width, unsigned int heigh
 		update(deltaTime);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		draw();		
-		ImGui::Render();
+		//ImGui::Render();
 		glfwSwapBuffers(m_window);
 		glfwPollEvents(); //check for events did the user press anything
 		m_gameover = m_gameover || (glfwWindowShouldClose(m_window) == GLFW_TRUE);

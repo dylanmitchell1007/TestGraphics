@@ -15,6 +15,9 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "3.RenderingGeometry", "3.RenderingGeometry\3.RenderingGeometry.vcxproj", "{DCB7C226-1EC9-4501-B0EE-CF4B7B8C341E}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Lighting", "Lighting\Lighting.vcxproj", "{35B2EBE7-3358-4600-8DF5-F6F039CABD11}"
+	ProjectSection(ProjectDependencies) = postProject
+		{FED2CDAF-BE2B-4C1C-B81D-59965C12F9F1} = {FED2CDAF-BE2B-4C1C-B81D-59965C12F9F1}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -20,26 +20,25 @@ void Mesh::initialize(std::vector<Vertex>& verts, std::vector<unsigned int>& ind
 	index_count = m_indices.size();
 	vertex_count = m_vertices.size();
 
-	this->create_buffers();
+	create_buffers();
 }
 
 
 
 void Mesh::create_buffers()
 {
-	glGenVertexArrays(1, &this->m_vao); //GENRATE THE VERTEX ARRAY OBJECT BEFORE THE VBO AND IBO
-	glBindVertexArray(this->m_vao);
+	glGenVertexArrays(1, &m_vao); //GENRATE THE VERTEX ARRAY OBJECT BEFORE THE VBO AND IBO
+	glBindVertexArray(m_vao);
 
-	glGenBuffers(1, &this->m_vbo); //GENERATE A VBO
-	glGenBuffers(1, &this->m_ibo); //GENERATE A IBO
+	glGenBuffers(1, &m_vbo); //GENERATE A VBO
+	glGenBuffers(1, &m_ibo); //GENERATE A IBO
 	
-	glBindBuffer(GL_ARRAY_BUFFER, this->m_vbo); //BIND THE VBO
-	//glBufferData(GL_ARRAY_BUFFER, this->vertex_count * sizeof(Vertex), glm::value_ptr(_vertices), GL_STATIC_DRAW); //SEND OPENGL THE VBO'S INFORMATION
-	glBufferData(GL_ARRAY_BUFFER, this->vertex_count * sizeof(Vertex), m_vertices.data(), GL_STATIC_DRAW); //SEND OPENGL THE VBO'S INFORMATION
+	glBindBuffer(GL_ARRAY_BUFFER, m_vbo); //BIND THE VBO
+	//glBufferData(GL_ARRAY_BUFFER, vertex_count * sizeof(Vertex), glm::value_ptr(_vertices), GL_STATIC_DRAW); //SEND OPENGL THE VBO'S INFORMATION
+	glBufferData(GL_ARRAY_BUFFER, vertex_count * sizeof(Vertex), m_vertices.data(), GL_STATIC_DRAW); //SEND OPENGL THE VBO'S INFORMATION
 
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->m_ibo); //BIND THE IBO
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-		this->index_count * sizeof(unsigned int), m_indices.data(), GL_STATIC_DRAW); //SEND OPENGL THE IBO'S INFORMATION
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ibo); //BIND THE IBO
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, index_count * sizeof(unsigned int), m_indices.data(), GL_STATIC_DRAW); //SEND OPENGL THE IBO'S INFORMATION
 
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), 0);
@@ -56,7 +55,7 @@ void Mesh::create_buffers()
 
 void Mesh::bind()
 {
-	glBindVertexArray(this->m_vao);
+	glBindVertexArray(m_vao);
 }
 void Mesh::unbind()
 {
@@ -65,8 +64,8 @@ void Mesh::unbind()
 
 void Mesh::draw(GLuint mode)
 {
-	this->bind();
+	bind();
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-	glDrawElements(mode, this->index_count, GL_UNSIGNED_INT, 0);
-	this->unbind();	
+	glDrawElements(mode, index_count, GL_UNSIGNED_INT, 0);
+	unbind();	
 }

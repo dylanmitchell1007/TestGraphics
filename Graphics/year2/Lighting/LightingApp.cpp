@@ -60,16 +60,14 @@ Mesh* generateSphere(unsigned int segments, unsigned int rings,
 	Mesh* sphere = new Mesh();
 	std::vector<Vertex> verts;
 	std::vector<unsigned int> indes;
-	for (int i = 0; i < vertCount; i++)
-	{
+	for (int i = 0; i < vertCount; i++)	
 		verts.push_back(vertices[i]);
-	}
-	for (int i = 0; i < vertCount; i++)
-	{
+	
+	for (int i = 0; i < indexCount; i++)	
 		indes.push_back(indices[i]);
-	}
+	
 	sphere->initialize(verts, indes);
-	return sphere;
+	
 
 	// generate buffers
 	glGenBuffers(1, &vbo);
@@ -115,20 +113,21 @@ Mesh* generateSphere(unsigned int segments, unsigned int rings,
 
 	delete[] indices;
 	delete[] vertices;
+	return sphere;
 }
-
+unsigned int vao = 0, vbo = 0, ibo = 0, indexCount = 0;
 void LightingApp::startup()
 {
 	m_camera = new Camera();
 	m_camera->setLookAt(glm::vec3(10,10,10), glm::vec3(0), glm::vec3(0,1,0));
-	m_camera->setPerspective(glm::pi<float>() / 4, 800/800, 0.1f, 10000.0f);
+	m_camera->setPerspective(glm::quarter_pi<float>(), 1, 3, 1000.0f);
 
 	m_shader = new Shader();
 	m_shader->load("lighting.vert", GL_VERTEX_SHADER);
 	m_shader->load("lighting.frag", GL_FRAGMENT_SHADER);
 	m_shader->attach();
 
-	unsigned int vao = 0, vbo = 0, ibo = 0, indexCount = 0;
+	
 	m_sphere = generateSphere(100, 100, vao, vbo, ibo, indexCount);
 }
 
@@ -143,33 +142,18 @@ void LightingApp::update(float)
 
 void LightingApp::draw()
 {
-	
-	glm::mat4 view = glm::lookAt(glm::vec3(10, 10, 10), glm::vec3(0), glm::vec3(0, 1, 0));
-	/*glm::pi<float>() / 4.0f, (int)(800/800), 0.1f, 10000.0f);*/
-	
-	auto aspectRatio = 800 / 800.0f;
-	auto FOV = glm::pi<float>() / 4;
-	auto farClip = 1000.0f;
-	auto nearClip = 0.1f;
-
-
-	float X = 1 / (aspectRatio * tanf(FOV / 2));
-	float Y = 1 / (tanf(FOV / 2));
-	float Z = -((farClip + nearClip) / (farClip - nearClip));
-	float Zz = -(2 * (farClip * nearClip) / (farClip - nearClip));
-
-	auto P = glm::mat4(
-		glm::vec4(X, 0, 0, 0),
-		glm::vec4(0, Y, 0, 0),
-		glm::vec4(0, 0, Z, -1),
-		glm::vec4(0, 0, Zz, 0));
-
-	auto projView = P * view;
-
+	auto projView = m_camera->getProjectionView();
+	auto view = glm::lookAt(glm::vec3(0, 10, 1), glm::vec3(0), glm::vec3(0, 1, 0));
+	auto proj = glm::perspective(glm::quarter_pi<float>(), 1.f, 3.f, 1000.0f);
+	auto model = glm::scale(glm::vec3(5));
+	auto mvp = proj * view * model;
 	//draw object
 	m_shader->bind();
 	auto projectionViewUniform = m_shader->getUniform("ProjectionViewWorld");
-	glUniformMatrix4fv(projectionViewUniform, 1, GL_FALSE, glm::value_ptr(projView * sphereMatrix));
+	glUniformMatrix4fv(projectionViewUniform, 1, GL_FALSE, glm::value_ptr(mvp));
+
+	//glBindVertexArray(vao);
+	//glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, 0);
 	m_sphere->draw(GL_TRIANGLES);
 	m_shader->unbind();
 }

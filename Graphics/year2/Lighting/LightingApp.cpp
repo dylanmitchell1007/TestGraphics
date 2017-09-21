@@ -1,7 +1,10 @@
+#include <gl_core_4_4.h>
+#include <glfw3.h>
 #include "LightingApp.h"
 #include <Mesh.h>
 #include <Shader.h>
 #include <Camera.h>
+#include <assert.h>
 #include <glm/gtc/constants.hpp>
 #include <glm/ext.hpp>
 #include <glm/glm.hpp>
@@ -116,6 +119,21 @@ Mesh* generateSphere(unsigned int segments, unsigned int rings,
 	return sphere;
 }
 unsigned int vao = 0, vbo = 0, ibo = 0, indexCount = 0;
+
+void LightingApp::Diffuse()
+{
+	m_shader->load("Diffuse.vert", GL_VERTEX_SHADER);
+	m_shader->load("Diffuse.frag", GL_FRAGMENT_SHADER);
+
+	m_shader->attach();
+}
+void LightingApp::ColorSphere()
+{
+	m_shader->load("lighting.vert", GL_VERTEX_SHADER);
+	m_shader->load("lighting.frag", GL_FRAGMENT_SHADER);
+	m_shader->attach();
+}
+
 void LightingApp::startup()
 {
 	m_camera = new Camera();
@@ -123,9 +141,10 @@ void LightingApp::startup()
 	m_camera->setPerspective(glm::quarter_pi<float>(), 1, 3, 1000.0f);
 
 	m_shader = new Shader();
-	m_shader->load("lighting.vert", GL_VERTEX_SHADER);
+	/*m_shader->load("lighting.vert", GL_VERTEX_SHADER);
 	m_shader->load("lighting.frag", GL_FRAGMENT_SHADER);
-	m_shader->attach();
+	
+	m_shader->attach();*/
 
 	
 	m_sphere = generateSphere(100, 100, vao, vbo, ibo, indexCount);
@@ -138,6 +157,17 @@ void LightingApp::shutdown()
 glm::mat4 sphereMatrix = glm::mat4(1);
 void LightingApp::update(float)
 {
+	int state = glfwGetKey(m_window, GLFW_KEY_D);
+	{
+		if (state == GLFW_PRESS)
+		Diffuse();
+	}
+	
+	int color = glfwGetKey(m_window, GLFW_KEY_C);
+	{
+		if (color == GLFW_PRESS)
+			ColorSphere();
+	}
 }
 
 void LightingApp::draw()

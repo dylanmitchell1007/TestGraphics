@@ -10,6 +10,10 @@ public:
 	// Inherited via Application
 	virtual void startup();
 
+	virtual void Diffuse();
+
+	virtual void ColorSphere();
+
 	virtual void shutdown();
 
 	virtual void update(float);

@@ -1,4 +1,4 @@
-#include <gl_core_4_4.h>
+	#include <gl_core_4_4.h>
 #include <glfw3.h>
 #include "LightingApp.h"
 #include <Mesh.h>
@@ -133,21 +133,47 @@ void LightingApp::ColorSphere()
 	m_shader->load("lighting.frag", GL_FRAGMENT_SHADER);
 	m_shader->attach();
 }
+void generatePlane(Mesh* plane)
+{
+	//bottomleft
+	Vertex f = { glm::vec4(0, 0, 0, 1)		, glm::vec4(0.5, 0, 0, .5) };
+	//bottomright
+	Vertex g = { glm::vec4(5,  0, 0, 1)		, glm::vec4(0.5, 0, 0, .5) };
+	//topright
+	Vertex h = { glm::vec4(5,  0, 5, 1)		, glm::vec4(0.5, 0, 0, .5) };
+	//topleft
+	Vertex i = { glm::vec4(0,  0, 5, 1)		, glm::vec4(0.5, 0, 0, .5) };
 
+	//Plane Vertex
+	std::vector<Vertex> myPlane = { f, g, h, i };
+	//Plane Indices
+	std::vector<unsigned int> planeIndices = { 0,1,3,3,2,1 };
+	plane->initialize(myPlane, planeIndices);
+
+}
+
+glm::mat4 world = glm::mat4(1);
+glm::mat4 view = glm::mat4(1);
+glm::mat4 proj = glm::mat4(1);
 void LightingApp::startup()
 {
-	m_camera = new Camera();
-	m_camera->setLookAt(glm::vec3(10,10,10), glm::vec3(0), glm::vec3(0,1,0));
-	m_camera->setPerspective(glm::quarter_pi<float>(), 1, 3, 1000.0f);
+	view = glm::lookAt(glm::vec3(10, 10, -10), glm::vec3(0), glm::vec3(0, 1, 0));
+	proj = glm::perspective(glm::quarter_pi<float>(), 1.f, 3.f, 1000.0f);
 
 	m_shader = new Shader();
 	/*m_shader->load("lighting.vert", GL_VERTEX_SHADER);
 	m_shader->load("lighting.frag", GL_FRAGMENT_SHADER);
-	
 	m_shader->attach();*/
-
 	
 	m_sphere = generateSphere(100, 100, vao, vbo, ibo, indexCount);
+
+	this->plane_Mesh = new Mesh();
+	generatePlane(this->plane_Mesh);
+
+	this->myshader = new Shader();
+	this->myshader->load("lighting.vert", GL_VERTEX_SHADER);
+	this->myshader->load("lighting.frag", GL_FRAGMENT_SHADER);
+	this->myshader->attach();
 }
 
 void LightingApp::shutdown()
@@ -155,35 +181,102 @@ void LightingApp::shutdown()
 }
 
 glm::mat4 sphereMatrix = glm::mat4(1);
-void LightingApp::update(float)
+glm::mat4 planeModel = glm::mat4(1);
+void LightingApp::update(float deltaTime)
 {
-	int state = glfwGetKey(m_window, GLFW_KEY_D);
+	int state = glfwGetKey(m_window, GLFW_KEY_KP_7);
 	{
 		if (state == GLFW_PRESS)
 		Diffuse();
 	}
 	
-	int color = glfwGetKey(m_window, GLFW_KEY_C);
+	int color = glfwGetKey(m_window, GLFW_KEY_KP_8);
 	{
 		if (color == GLFW_PRESS)
 			ColorSphere();
 	}
+
+
+	if (glfwGetKey(m_window, GLFW_KEY_W))
+	{
+		auto t = glm::mat4(
+			glm::vec4(1, 0, 0, 0),
+			glm::vec4(0, 1, 0, 0),
+			glm::vec4(0, 0, 1, 0),
+			glm::vec4(0, 0, -1, 1)
+		);
+
+		world = world * t;
+		view = glm::inverse(world);
+	}
+
+	if (glfwGetKey(m_window, GLFW_KEY_S))
+	{
+		auto t = glm::mat4(
+			glm::vec4(1, 0, 0, 0),
+			glm::vec4(0, 1, 0, 0),
+			glm::vec4(0, 0, 1, 0),
+			glm::vec4(0, 0, 1, 1)
+		);
+
+		world = world * t;
+		view = glm::inverse(world);
+	}
+
+	if (glfwGetKey(m_window, GLFW_KEY_A))
+	{
+		auto t = glm::mat4(
+			glm::vec4(1, 0, 0, 0),
+			glm::vec4(0, 1, 0, 0),
+			glm::vec4(0, 0, 1, 0),
+			glm::vec4(1, 0, 0, 1)
+		);
+
+		world = world * t;
+		view = glm::inverse(world);
+	}
+
+	if (glfwGetKey(m_window, GLFW_KEY_D))
+	{
+		auto t = glm::mat4(
+			glm::vec4(1, 0, 0, 0),
+			glm::vec4(0, 1, 0, 0),
+			glm::vec4(0, 0, 1, 0),
+			glm::vec4(-1, 0, 0, 1)
+		);
+
+		world = world * t;
+		view = glm::inverse(world);
+	}
+
+	if (glfwGetKey(m_window, GLFW_KEY_SPACE))
+	{
+		view = lookAt(glm::vec3(view[3].x, view[3].y, view[3].z), glm::vec3(0), glm::vec3(0, 1, 0));
+	}
+
+	if (glfwGetKey(m_window, GLFW_KEY_P))
+	{
+		view = glm::lookAt(glm::vec3(10, 10, -10), glm::vec3(0), glm::vec3(0, 1, 0));
+	}
 }
 
 void LightingApp::draw()
-{
-	auto projView = m_camera->getProjectionView();
-	auto view = glm::lookAt(glm::vec3(0, 10, 1), glm::vec3(0), glm::vec3(0, 1, 0));
-	auto proj = glm::perspective(glm::quarter_pi<float>(), 1.f, 3.f, 1000.0f);
-	auto model = glm::scale(glm::vec3(5));
+{	
+	auto model = glm::scale(glm::vec3(2));
+
 	auto mvp = proj * view * model;
-	//draw object
+	auto planeMVP = proj * view * planeModel;
+
+	//draw sphere
 	m_shader->bind();
 	auto projectionViewUniform = m_shader->getUniform("ProjectionViewWorld");
 	glUniformMatrix4fv(projectionViewUniform, 1, GL_FALSE, glm::value_ptr(mvp));
-
-	//glBindVertexArray(vao);
-	//glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, 0);
 	m_sphere->draw(GL_TRIANGLES);
 	m_shader->unbind();
+
+	myshader->bind();
+	auto planeProjectionViewUniform = myshader->getUniform("ProjectionViewWorld");
+	glUniformMatrix4fv(planeProjectionViewUniform, 1, GL_FALSE, glm::value_ptr(planeMVP));
+	plane_Mesh->draw(GL_TRIANGLES);
+	myshader->unbind();
 }

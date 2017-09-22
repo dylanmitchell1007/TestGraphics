@@ -22,6 +22,8 @@ public:
 
 
 private:
+	Mesh* plane_Mesh;
+	Shader* myshader;
 	Camera* m_camera;
 	Mesh* m_sphere;
 	Shader* m_shader;

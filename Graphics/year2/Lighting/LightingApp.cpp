@@ -1,4 +1,4 @@
-	#include <gl_core_4_4.h>
+#include <gl_core_4_4.h>
 #include <glfw3.h>
 #include "LightingApp.h"
 #include <Mesh.h>
@@ -119,7 +119,14 @@ Mesh* generateSphere(unsigned int segments, unsigned int rings,
 	return sphere;
 }
 unsigned int vao = 0, vbo = 0, ibo = 0, indexCount = 0;
+void LightingApp::Ambient()
+{
+	m_ambient = new Shader();
+	m_ambient->load("ambient.vert", GL_VERTEX_SHADER);
+	m_ambient->load("ambient.frag", GL_FRAGMENT_SHADER);
 
+	m_ambient->attach();
+}
 void LightingApp::Diffuse()
 {
 	m_shader->load("Diffuse.vert", GL_VERTEX_SHADER);
@@ -127,6 +134,35 @@ void LightingApp::Diffuse()
 
 	m_shader->attach();
 }
+void LightingApp::Specular()
+{
+	m_specular = new Shader();
+	m_specular->load("specular.vert", GL_VERTEX_SHADER);
+	m_specular->load("specular.frag", GL_FRAGMENT_SHADER);
+
+	m_specular->attach();
+}
+void LightingApp::Phong()
+{
+	m_phong = new Shader();
+	m_phong->load("phong.vert", GL_VERTEX_SHADER);
+	m_phong->load("phong.frag", GL_FRAGMENT_SHADER);
+
+	m_phong->attach();
+
+}
+void LightingApp::BlinPhong()
+{
+	m_blinphong = new Shader();
+	m_blinphong->load("blinphong.vert", GL_VERTEX_SHADER);
+	m_blinphong->load("blinphong.frag", GL_FRAGMENT_SHADER);
+
+	m_blinphong->attach();
+}
+
+
+
+
 void LightingApp::ColorSphere()
 {
 	m_shader->load("lighting.vert", GL_VERTEX_SHADER);
@@ -174,6 +210,7 @@ void LightingApp::startup()
 	this->myshader->load("lighting.vert", GL_VERTEX_SHADER);
 	this->myshader->load("lighting.frag", GL_FRAGMENT_SHADER);
 	this->myshader->attach();
+
 }
 
 void LightingApp::shutdown()
@@ -184,12 +221,22 @@ glm::mat4 sphereMatrix = glm::mat4(1);
 glm::mat4 planeModel = glm::mat4(1);
 void LightingApp::update(float deltaTime)
 {
-	int state = glfwGetKey(m_window, GLFW_KEY_KP_7);
+	int amb = glfwGetKey(m_window, GLFW_KEY_KP_5);
 	{
-		if (state == GLFW_PRESS)
-		Diffuse();
+		if (amb == GLFW_PRESS)
+			Ambient();
 	}
 	
+	int diff = glfwGetKey(m_window, GLFW_KEY_KP_7);
+	{
+		if (diff == GLFW_PRESS)
+		Diffuse();
+	}
+	int spec = glfwGetKey(m_window, GLFW_KEY_KP_6);
+	{
+		if (spec == GLFW_PRESS)
+			Specular();
+	}
 	int color = glfwGetKey(m_window, GLFW_KEY_KP_8);
 	{
 		if (color == GLFW_PRESS)
@@ -263,9 +310,104 @@ void LightingApp::update(float deltaTime)
 void LightingApp::draw()
 {	
 	auto model = glm::scale(glm::vec3(2));
-
+	unsigned int defaultVPUniform = 0;
+	unsigned int lightingVPUniform = 0;
+	glm::vec3 lightColor = glm::vec3(1);
+	glm::vec3 lightDirection = glm::vec3(0, 1, 0);
+	glm::vec3 skyColor = glm::vec3(0.5, 0.5, 0.5);
+	glm::vec3 groundColor = glm::vec3(0, 0.5, 0);
+	glm::vec3 upVector = glm::vec3(0, 1, 0);
 	auto mvp = proj * view * model;
 	auto planeMVP = proj * view * planeModel;
+	//Ambient
+	m_ambient->bind();
+	lightingVPUniform = m_ambient->getUniform("WVP"); //USE 'lightingVPUniform'
+	auto ambientUpVecUniform = m_ambient->getUniform("upVector");
+	auto ambientskyColorUniform = m_ambient->getUniform("skyColor");
+	auto ambientgroundColorUniform = m_ambient->getUniform("groundColor");
+
+	glUniform3fv(ambientUpVecUniform, 1, glm::value_ptr(upVector)); //SEND THE AMBIENT SHADER THE UP VECTOR
+	glUniform3fv(ambientskyColorUniform, 1, glm::value_ptr(skyColor)); //SEND THE AMBIENT SHADER THE SKY COLOR
+	glUniform3fv(ambientgroundColorUniform, 1, glm::value_ptr(groundColor)); //SEND THE AMBIENT SHADER THE GROUND COLOR
+	glUniformMatrix4fv(defaultVPUniform, 1, GL_FALSE, glm::value_ptr(sphereMatrix));
+	m_sphere->draw(GL_TRIANGLES);
+	m_ambient->unbind();
+	//Diffuse
+	m_diffuse->bind();
+	lightingVPUniform = m_diffuse->getUniform("WVP");
+	auto diffuseLightDirectionUniform = m_diffuse->getUniform("lightDirection"); //GET HANDLE FOR THE DIFFUSE SHADER UNIFORM 'lightDirection'
+	auto diffuseLightColorUniform = m_diffuse->getUniform("lightColor"); //GET HANDLE FOR THE DIFFUSE SHADER UNIFORM 'lightColor'
+
+	glUniform3fv(diffuseLightDirectionUniform, 1, glm::value_ptr(lightDirection)); //SEND THE DIFFUSE SHADER THE LIGHT'S DIRECTION
+	glUniform3fv(diffuseLightColorUniform, 1, glm::value_ptr(lightColor)); //SEND THE DIFFUSE SHADER THE LIGHT'S COLOR
+	glUniformMatrix4fv(lightingVPUniform, 1, GL_FALSE, glm::value_ptr(sphereMatrix));
+	m_sphere->draw(GL_TRIANGLES);
+	m_diffuse->unbind();
+	//Phong
+	m_phong->bind();
+	lightingVPUniform = m_phong->getUniform("WVP");
+
+	auto phongUpVecUniform = m_phong->getUniform("upVector");
+	auto phongskyColorUniform = m_phong->getUniform("skyColor");
+	auto phonggroundColorUniform = m_phong->getUniform("groundColor");
+
+	auto phongLightDirectionUniform = m_phong->getUniform("lightDirection");
+	auto phongLightColorUniform = m_phong->getUniform("lightColor");
+	auto phongCameraPosUniform = m_phong->getUniform("cameraPosition");
+	auto phongSpecularPowerUniform = m_phong->getUniform("specularPower");
+
+	glUniform3fv(phongUpVecUniform, 1, glm::value_ptr(upVector)); //SEND THE PHONG SHADER THE UP VECTOR
+	glUniform3fv(phongskyColorUniform, 1, glm::value_ptr(skyColor)); //SEND THE PHONG SHADER THE SKY COLOR
+	glUniform3fv(phonggroundColorUniform, 1, glm::value_ptr(groundColor)); //SEND THE PHONG SHADER THE GROUND COLOR
+
+	glUniform3fv(phongLightDirectionUniform, 1, glm::value_ptr(lightDirection)); // SEND THE PHONG SHADER THE LIGHTS DIRECTION
+	glUniform3fv(phongLightColorUniform, 1, glm::value_ptr(lightColor)); // SEND THE PHONG SHADER THE LIGHTS COLOR
+	glUniform3fv(phongCameraPosUniform, 1, glm::value_ptr(m_camera->getProjectionView()[3])); // SEND THE PHONG SHADER THE CAMERA'S POSITION
+	glUniform1f(phongSpecularPowerUniform, 128.0f); // SEND THE PHONG SHADER A VALUE FOR THE SPECULAR POWER
+	glUniformMatrix4fv(lightingVPUniform, 1, GL_FALSE, glm::value_ptr(sphereMatrix));
+	m_sphere->draw(GL_TRIANGLES);
+	m_phong->unbind();
+
+	//BlinPhong
+	m_blinphong->bind();
+	lightingVPUniform = m_blinphong->getUniform("WVP");
+
+	auto blinnUpVecUniform = m_blinphong->getUniform("upVector");
+	auto blinnskyColorUniform = m_blinphong->getUniform("skyColor");
+	auto blinngroundColorUniform = m_blinphong->getUniform("groundColor");
+
+	auto blinnLightDirectionUniform = m_blinphong->getUniform("lightDirection");
+	auto blinnLightColorUniform = m_blinphong->getUniform("lightColor");
+	auto blinnCameraPosUniform = m_blinphong->getUniform("cameraPosition");
+	auto blinnSpecularPowerUniform = m_blinphong->getUniform("specularPower");
+
+	glUniform3fv(blinnUpVecUniform, 1, glm::value_ptr(upVector)); //SEND THE PHONG SHADER THE UP VECTOR
+	glUniform3fv(blinnskyColorUniform, 1, glm::value_ptr(skyColor)); //SEND THE PHONG SHADER THE SKY COLOR
+	glUniform3fv(blinngroundColorUniform, 1, glm::value_ptr(groundColor)); //SEND THE PHONG SHADER THE GROUND COLOR
+
+	glUniform3fv(blinnLightDirectionUniform, 1, glm::value_ptr(lightDirection)); // SEND THE PHONG SHADER THE LIGHTS DIRECTION
+	glUniform3fv(blinnLightColorUniform, 1, glm::value_ptr(lightColor)); // SEND THE PHONG SHADER THE LIGHTS COLOR
+	glUniform3fv(blinnCameraPosUniform, 1, glm::value_ptr(m_camera->getProjectionView()[3])); // SEND THE PHONG SHADER THE CAMERA'S POSITION
+	glUniform1f(blinnSpecularPowerUniform, 128.0f); // SEND THE PHONG SHADER A VALUE FOR THE SPECULAR POWER
+	glUniformMatrix4fv(lightingVPUniform, 1, GL_FALSE, glm::value_ptr(sphereMatrix));
+	m_sphere->draw(GL_TRIANGLES);
+	m_blinphong->unbind();
+
+	//specular
+	m_specular->bind();
+	lightingVPUniform = m_specular->getUniform("WVP");
+	auto specularLightDirectionUniform = m_specular->getUniform("lightDirection"); //GET HANDLE FOR THE SPECULAR SHADER UNIFORM 'lightDirection'
+	auto specularLightColorUniform = m_specular->getUniform("lightColor"); //GET HANDLE FOR THE SPECULAR SHADER UNIFORM 'lightColor'
+	auto specularCameraPosUniform = m_specular->getUniform("cameraPosition"); //GET HANDLE FOR THE SPECULAR SHADER UNIFORM 'cameraPosition'
+	auto specularPowerUniform = m_specular->getUniform("specularPower"); //GET HANDLE FOR THE SPECULAR SHADER UNIFORM 'specularPower'
+
+	glUniform3fv(specularLightDirectionUniform, 1, glm::value_ptr(lightDirection)); //SEND THE SPECULAR SHADER THE LIGHT'S DIRECTION
+	glUniform3fv(specularLightColorUniform, 1, glm::value_ptr(lightColor)); //SEND THE SPECULAR SHADER THE LIGHT'S COLOR
+	glUniform3fv(specularCameraPosUniform, 1, glm::value_ptr(m_camera->getProjectionView()[3])); //SEND THE SPECULAR SHADER THE CAMERA'S POSITION
+	glUniform1f(specularPowerUniform, 128.0f); //SEND THE SPECULAR SHADER A VALUE FOR 'specularPower'
+	glUniformMatrix4fv(lightingVPUniform, 1, GL_FALSE, glm::value_ptr(sphereMatrix));
+	m_sphere->draw(GL_TRIANGLES);
+	m_specular->unbind();
 
 	//draw sphere
 	m_shader->bind();

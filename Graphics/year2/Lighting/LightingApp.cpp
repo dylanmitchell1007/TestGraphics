@@ -397,12 +397,12 @@ void LightingApp::draw()
 	glUniform3fv(blinnLightColorUniform, 1, glm::value_ptr(lightColor)); // SEND THE PHONG SHADER THE LIGHTS COLOR
 	glUniform3fv(blinnCameraPosUniform, 1, glm::value_ptr(view[3])); // SEND THE PHONG SHADER THE CAMERA'S POSITION
 	glUniform1f(blinnSpecularPowerUniform, 128.0f); // SEND THE PHONG SHADER A VALUE FOR THE SPECULAR POWER
-	glUniformMatrix4fv(lightingUniform, 1, GL_FALSE, glm::value_ptr(mvp * moveright* moveright));
+	glUniformMatrix4fv(lightingUniform, 1, GL_FALSE, glm::value_ptr(mvp * moveright* moveright *moveright));
 	m_sphere->draw(GL_TRIANGLES);
 	plane_Mesh->draw(GL_TRIANGLES);
 	m_blinphong->unbind();
 
-	////specular
+	//////specular
 	m_specular->bind();
 	lightingUniform = m_specular->getUniform("WVP");
 	auto specularLightDirectionUniform = m_specular->getUniform("lightDirection"); //GET HANDLE FOR THE SPECULAR SHADER UNIFORM 'lightDirection'

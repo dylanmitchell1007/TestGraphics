@@ -106,6 +106,7 @@ void generateSphere(unsigned int segments, unsigned int rings,
 
 }
 unsigned int vao = 0, vbo = 0, ibo = 0, indexCount = 0;
+
 void LightingApp::Ambient()
 {
 	m_ambient->load("ambient.vert", GL_VERTEX_SHADER);
@@ -113,12 +114,14 @@ void LightingApp::Ambient()
 
 	m_ambient->attach();
 }
+
 void LightingApp::Diffuse()
 {
 	m_diffuse->load("Diffuse.vert", GL_VERTEX_SHADER);
 	m_diffuse->load("Diffuse.frag", GL_FRAGMENT_SHADER);
 	m_diffuse->attach();
 }
+
 void LightingApp::Specular()
 {
 	m_specular->load("specular.vert", GL_VERTEX_SHADER);
@@ -126,6 +129,7 @@ void LightingApp::Specular()
 
 	m_specular->attach();
 }
+
 void LightingApp::Phong()
 {
 	m_phong->load("phong.vert", GL_VERTEX_SHADER);
@@ -134,6 +138,7 @@ void LightingApp::Phong()
 	m_phong->attach();
 
 }
+
 void LightingApp::BlinPhong()
 {
 	m_blinphong->load("blinphong.vert", GL_VERTEX_SHADER);
@@ -142,15 +147,13 @@ void LightingApp::BlinPhong()
 	m_blinphong->attach();
 }
 
-
-
-
 void LightingApp::ColorSphere()
 {
 	m_shader->load("lighting.vert", GL_VERTEX_SHADER);
 	m_shader->load("lighting.frag", GL_FRAGMENT_SHADER);
 	m_shader->attach();
 }
+
 void generatePlane(Mesh* plane)
 {
 	//bottomleft
@@ -169,10 +172,10 @@ void generatePlane(Mesh* plane)
 	plane->initialize(myPlane, planeIndices);
 
 }
-
 glm::mat4 world = glm::mat4(1);
 glm::mat4 view = glm::mat4(1);
 glm::mat4 proj = glm::mat4(1);
+
 void LightingApp::startup()
 {
 	view = glm::lookAt(glm::vec3(15, 15, -30), glm::vec3(0), glm::vec3(0, 1, 0));
@@ -207,7 +210,6 @@ void LightingApp::startup()
 void LightingApp::shutdown()
 {
 }
-
 
 void LightingApp::update(float deltaTime)
 {

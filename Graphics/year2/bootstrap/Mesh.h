@@ -24,11 +24,11 @@ public:
 	void draw(GLuint mode);
 	unsigned int index_count;
 	unsigned int vertex_count;
-
-private:
 	unsigned int m_vao;
 	unsigned int m_vbo;
 	unsigned int m_ibo;
+private:
+
 	std::vector<Vertex> m_vertices;
 	std::vector<unsigned int> m_indices;
 };

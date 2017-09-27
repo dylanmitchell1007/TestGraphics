@@ -13,11 +13,12 @@ uniform vec3 groundColor;
 
 void main()
 {
-float vertNormDotUp = dot(vertexNormal.xyz, upVector);
+float vertNormDotUp = dot(normalize(vertexNormal.xyz), vec3(0,1,0));
 float influence = vertNormDotUp + (0.5f * 0.5f);
 
 vec3 hemisphereLighting = mix(groundColor, skyColor, influence);
 fragColor = vec4(hemisphereLighting, 1);
+fragColor = vec4(normalize(vertexNormal.xyz), 1);
 }
 
 

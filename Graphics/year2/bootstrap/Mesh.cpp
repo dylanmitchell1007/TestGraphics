@@ -46,6 +46,9 @@ void Mesh::create_buffers()
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)sizeof(glm::vec4));
 
+	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(2, 4, GL_FLOAT, GL_TRUE, sizeof(Vertex), (void*)sizeof(glm::vec4) * 2);
+
 	glBindVertexArray(0); //UNBIND THE VAO
 	glBindBuffer(GL_ARRAY_BUFFER, 0); //UNBIND THE VBO
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0); //UNBIND THE IBO

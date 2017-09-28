@@ -4,6 +4,7 @@
 struct Mesh;
 struct Shader;
 struct Camera;
+struct Texture;
 class LightingApp : public Application
 {
 public:
@@ -44,9 +45,13 @@ private:
 	
 	Shader* m_specular;
 	
+	Shader* m_textureShader;
+	Texture* m_texture;
+	
 	Shader* m_phong;
 
 	Shader* m_blinphong;
 
 	Shader* m_shader;
+
 };

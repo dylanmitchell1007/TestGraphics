@@ -3,6 +3,7 @@
 #include "LightingApp.h"
 #include <Mesh.h>
 #include <Shader.h>
+#include "Texture.h"
 #include <Camera.h>
 #include <assert.h>
 #include <glm/gtc/constants.hpp>
@@ -156,14 +157,14 @@ void LightingApp::ColorSphere()
 
 void generatePlane(Mesh* plane)
 {
-	//bottomleft
-	Vertex f = { glm::vec4(0, 0, 0, 1)		, glm::vec4(0.5, 0, 0, .5) };
-	//bottomright
-	Vertex g = { glm::vec4(5,  0, 0, 1)		, glm::vec4(0.5, 0, 0, .5) };
-	//topright
-	Vertex h = { glm::vec4(5,  0, 5, 1)		, glm::vec4(0.5, 0, 0, .5) };
-	//topleft
-	Vertex i = { glm::vec4(0,  0, 5, 1)		, glm::vec4(0.5, 0, 0, .5) };
+	//bottomleft                                   //Color                //Normal      //Texture
+	Vertex f = { glm::vec4(0, 0, 0, 1)		, glm::vec4(0.5, 0, 0, .5), glm::vec4(0), glm::vec2(0,0)};
+	//bottomright                                  //Color                //Normal      //Texture
+	Vertex g = { glm::vec4(5,  0, 0, 1)		, glm::vec4(0.5, 0, 0, .5), glm::vec4(0), glm::vec2(1,0) };
+	//topright                                    //Color                //Normal      //Texture 
+	Vertex h = { glm::vec4(5,  0, 5, 1)		, glm::vec4(0.5, 0, 0, .5), glm::vec4(0), glm::vec2(1,1) } ;
+	//topleft                                     //Color                //Normal      //Texture
+	Vertex i = { glm::vec4(0,  0, 5, 1)		, glm::vec4(0.5, 0, 0, .5), glm::vec4(0), glm::vec2(0,1) };
 
 	//Plane Vertex
 	std::vector<Vertex> myPlane = { f, g, h, i };
@@ -178,9 +179,9 @@ glm::mat4 proj = glm::mat4(1);
 
 void LightingApp::startup()
 {
-	view = glm::lookAt(glm::vec3(15, 15, -30), glm::vec3(0), glm::vec3(0, 1, 0));
-	proj = glm::perspective(glm::quarter_pi<float>(), 1.f, 3.f, 1000.0f);
-
+	view = glm::lookAt(glm::vec3(0, 15, 1), glm::vec3(0), glm::vec3(0, 1, 0));
+	proj = glm::perspective(glm::quarter_pi<float>(), 1.f, 3.f, 1000.0f);	
+	
 	m_shader = new Shader();
 	/*m_shader->load("lighting.vert", GL_VERTEX_SHADER);
 	m_shader->load("lighting.frag", GL_FRAGMENT_SHADER);
@@ -195,16 +196,25 @@ void LightingApp::startup()
 	this->plane_Mesh = new Mesh();
 	generatePlane(this->plane_Mesh);
 	
-	this->myshader = new Shader();
+	/*this->myshader = new Shader();
 	this->myshader->load("lighting.vert", GL_VERTEX_SHADER);
 	this->myshader->load("lighting.frag", GL_FRAGMENT_SHADER);
-	this->myshader->attach();
+	this->myshader->attach();*/
 
 	Specular();
 	Diffuse();
 	Ambient();
 	Phong();
 	BlinPhong();
+
+
+	m_textureShader = new Shader();
+	this->m_textureShader->load("texture.vert", GL_VERTEX_SHADER);
+	this->m_textureShader->load("texture.frag", GL_FRAGMENT_SHADER);
+	this->m_textureShader->attach();
+	m_texture = new Texture();
+	m_texture->load();
+
 }
 
 void LightingApp::shutdown()
@@ -312,7 +322,6 @@ void LightingApp::draw()
 	glm::mat4 model = glm::mat4(1);
 	
 	unsigned int lightingUniform = 0;
-
 	glm::vec3 lightColor = glm::vec3(1);
 	glm::vec3 lightDirection = glm::vec3(0, 1, 0);
 	glm::vec3 skyColor = glm::vec3(0.25, 0.25, 1);
@@ -322,7 +331,22 @@ void LightingApp::draw()
 	auto planeMVP = proj * view * planeModel;
 	auto moveright = glm::translate(glm::vec3(5, 0, 0));
 	auto moveleft = glm::translate(glm::vec3(-5, 0, 0));
-	//Ambient
+
+
+	////Texture
+	m_textureShader->bind();
+	m_texture->bind();
+	auto textureWVPuniform = m_textureShader->getUniform("WVP");
+	
+	auto textureSampler2DUniform = m_textureShader->getUniform("diffuseTexture");
+
+	glUniform1i(textureSampler2DUniform, 0);
+	glUniformMatrix4fv(textureWVPuniform, 1, GL_FALSE, glm::value_ptr(mvp));
+	plane_Mesh->draw(GL_TRIANGLES);
+	m_textureShader->unbind();
+
+
+	////Ambient
 	m_ambient->bind();
 	lightingUniform = m_ambient->getUniform("WVP"); //USE 'lightingVPUniform'
 	auto ambientUpVecUniform = m_ambient->getUniform("upVector");

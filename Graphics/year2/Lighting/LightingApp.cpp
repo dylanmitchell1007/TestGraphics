@@ -179,7 +179,7 @@ glm::mat4 proj = glm::mat4(1);
 
 void LightingApp::startup()
 {
-	view = glm::lookAt(glm::vec3(0, 15, 1), glm::vec3(0), glm::vec3(0, 1, 0));
+	view = glm::lookAt(glm::vec3(0, 15, 5), glm::vec3(0), glm::vec3(0, 1, 0));
 	proj = glm::perspective(glm::quarter_pi<float>(), 1.f, 3.f, 1000.0f);	
 	
 	m_shader = new Shader();
@@ -306,12 +306,13 @@ void LightingApp::update(float deltaTime)
 
 	if (glfwGetKey(m_window, GLFW_KEY_SPACE))
 	{
-		view = lookAt(glm::vec3(view[3].x, view[3].y, view[3].z), glm::vec3(0), glm::vec3(0, 1, 0));
+		view = lookAt(glm::vec3(view[3].x, view[3].y, view[3].z), glm::vec3(1), glm::vec3(0, 1, 0));
 	}
 
 	if (glfwGetKey(m_window, GLFW_KEY_P))
 	{
-		view = glm::lookAt(glm::vec3(15, 15, -30), glm::vec3(0), glm::vec3(0, 1, 0));
+		view = glm::lookAt(glm::vec3(0, 15, 25), glm::vec3(0), glm::vec3(0, 1, 0));
+		
 	}
 }
 

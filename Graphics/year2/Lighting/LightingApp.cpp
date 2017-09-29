@@ -213,7 +213,7 @@ void LightingApp::startup()
 	this->m_textureShader->load("texture.frag", GL_FRAGMENT_SHADER);
 	this->m_textureShader->attach();
 	m_texture = new Texture();
-	m_texture->load();
+	m_texture->load("..//bin//textures//water.jpg");
 
 }
 

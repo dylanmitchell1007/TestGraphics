@@ -35,6 +35,87 @@ glm::mat4 world = glm::mat4(1);
 glm::mat4 view = glm::mat4(1);
 glm::mat4 proj = glm::mat4(1);
 
+Mesh* generateGrid(unsigned int rows, unsigned int cols)
+{
+	auto aoVertices = new Vertex[rows * cols];
+	for (unsigned int r = 0; r < rows; ++r)
+	{
+		for (unsigned int c = 0; c < cols; ++c)
+		{
+			Vertex verts = {
+				glm::vec4(float(c), 0, float(r), 1), //POSITION
+				glm::vec4(0), //COLOR
+				glm::vec4(0, 1, 0, 0), //NORMAL
+				glm::vec2(float(c) / float(cols - 1), float(r) / float(rows - 1)) //TEXTURE COORDINATE
+			};
+			aoVertices[r * cols + c] = verts;
+		}
+	}
+
+	std::vector<Vertex> verts = std::vector<Vertex>();
+	std::vector<unsigned int> indices = std::vector<unsigned int>();
+
+	//Defining index count based off quad count (2 triangles per quad)
+	unsigned int* auiIndices = new unsigned int[(rows - 1) * (cols - 1) * 6];
+	unsigned int index = 0;
+	for (unsigned int r = 0; r < (rows - 1); ++r)
+	{
+		for (unsigned int c = 0; c < (cols - 1); ++c)
+		{
+			//Triangle 1
+			auiIndices[index++] = r * cols + c;
+			auiIndices[index++] = (r + 1) * cols + c;
+			auiIndices[index++] = (r + 1) * cols + (c + 1);
+			//Triangle 2
+			auiIndices[index++] = r * cols + c;
+			auiIndices[index++] = (r + 1) * cols + (c + 1);
+			auiIndices[index++] = r * cols + (c + 1);
+		}
+	}
+
+	for (unsigned int i = 0; i < (rows * cols); i++)
+	{
+		verts.push_back(aoVertices[i]);
+	}
+
+	for (unsigned int i = 0; i < index; i++)
+	{
+		indices.push_back(auiIndices[i]);
+	}
+
+	Mesh* plane = new Mesh();
+	plane->initialize(verts, indices);
+
+	delete[] aoVertices;
+	delete[] auiIndices;
+	return plane;
+}
+
+float* generatePerlin(unsigned int width, unsigned int height)
+{
+	int dims = 64;
+	float *perlinData = new float[dims * dims];
+	float scale = (1.0f / dims) * 3;
+	int octaves = 6;
+	for (int x = 0; x < 64; ++x)
+	{
+		for (int y = 0; y < 64; ++y)
+		{
+			float amplitude = 1.f;
+			float persistence = 0.3f;
+			perlinData[y * dims + x] = 0;
+			for (int o = 0; o < octaves; ++o)
+			{
+				float freq = powf(2, (float)o);
+				float perlinSample = glm::perlin(glm::vec2((float)x, (float)y) * scale * freq) * 0.5f + 0.5f;
+				perlinData[y * dims + x] += perlinSample * amplitude;
+				amplitude *= persistence;
+			}
+		}
+	}
+	return perlinData;
+}
+
 void generateSphere(unsigned int segments, unsigned int rings,
 	unsigned int& vao, unsigned int& vbo, unsigned int& ibo,
 	unsigned int& indexCount) {
@@ -136,20 +217,19 @@ void TextureApp::startup()
 {
 	view = glm::lookAt(glm::vec3(0, 15, 30.5), glm::vec3(5, 0, 5), glm::vec3(0, 1, 0));
 	proj = glm::perspective(glm::quarter_pi<float>(), 1.f, 3.f, 1000.0f);
-	m_shader = new Shader();
 
-	this->plane_Mesh = new Mesh();
-	generatePlane(this->plane_Mesh);
+	
+	this->plane_Mesh = generateGrid(25,25);
+	/*generatePlane(this->plane_Mesh);*/
 
+	m_perlinShader = new Shader();
+	this->m_perlinShader->load("perlin.vert", GL_VERTEX_SHADER);
+	this->m_perlinShader->load("perlin.frag", GL_FRAGMENT_SHADER);
+	this->m_perlinShader->attach();
 
-
-	m_textureShader = new Shader();
-	this->m_textureShader->load("texture.vert", GL_VERTEX_SHADER);
-	this->m_textureShader->load("texture.frag", GL_FRAGMENT_SHADER);
-	this->m_textureShader->attach();
 	m_texture = new Texture();
-	m_texture->load("..//bin//textures//water.jpg");
-
+	m_texture->generate2D(64, 64, generatePerlin(64, 64));
+	//m_texture->load("..//bin//textures//370z.jpg");
 }
 
 glm::mat4 model = glm::mat4(1);
@@ -158,32 +238,42 @@ void TextureApp::draw()
 	glm::mat4 sphereModel = glm::mat4(1);
 	glm::mat4 planeModel = glm::mat4(1) * glm::scale(glm::vec3(100));
 
-	
+
 	auto mvp = proj * view * model;
 	auto planeMVP = proj * view * planeModel;
 	auto moveright = glm::translate(glm::vec3(5, 0, 0));
 	auto moveleft = glm::translate(glm::vec3(-5, 0, 0));
 
 
-	m_textureShader->bind();
+	m_perlinShader->bind();
 	m_texture->bind();
-	auto textureWVPuniform = m_textureShader->getUniform("WVP");
 
-	auto textureSampler2DUniform = m_textureShader->getUniform("diffuseTexture");
+	auto textureWVPuniform = m_perlinShader->getUniform("WVP");
+
+	auto textureSampler2DUniform = m_perlinShader->getUniform("perlinTexture");
 
 	glUniform1i(textureSampler2DUniform, 0);
 	glUniformMatrix4fv(textureWVPuniform, 1, GL_FALSE, glm::value_ptr(mvp));
 	plane_Mesh->draw(GL_TRIANGLES);
-	m_textureShader->unbind();
+	m_perlinShader->unbind();
 
 }
 void TextureApp::update(float deltaTime)
 {
 	if (glfwGetKey(m_window, GLFW_KEY_P))
 	{
-		view = glm::lookAt(glm::vec3(2.5f, 5, 0.1f), glm::vec3(2.5f, 0, 2.5f), glm::vec3(0, 1, 0));
+		view = glm::lookAt(glm::vec3(2.5f, 15, -5.1f), glm::vec3(12.5f, 0, 12.5f), glm::vec3(0, 1, 0));
 	}
+
+	if (glfwGetKey(m_window, GLFW_KEY_KP_7))
+	{
+		this->m_perlinShader->load("perlin.vert", GL_VERTEX_SHADER);
+		this->m_perlinShader->load("perlin.frag", GL_FRAGMENT_SHADER);
+		this->m_perlinShader->attach();
+	}
+
 }
+
 void TextureApp::shutdown()
 {
 }

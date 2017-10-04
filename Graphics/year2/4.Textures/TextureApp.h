@@ -22,4 +22,5 @@ private:
 	Shader* m_textureShader;
 	Texture* m_texture;
 	Shader* m_shader;
+	Shader* m_perlinShader;
 };

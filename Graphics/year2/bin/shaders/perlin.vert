@@ -11,7 +11,7 @@ out vec2 vertexTextureCoord;
 
 uniform mat4 WVP;
 uniform sampler2D perlinTexture;
-
+uniform float scale;
 void main()
 {
 
@@ -23,7 +23,7 @@ vertexTextureCoord = TextureCoord;
 vec3 diffuseTexture = texture(perlinTexture, vertexTextureCoord).rrr;
 vec4 point = Position;
 
-point.y += diffuseTexture.y * 5;
+point.y += diffuseTexture.y * scale;
 
 gl_Position = WVP * point;
 }

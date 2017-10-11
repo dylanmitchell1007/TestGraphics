@@ -11,6 +11,8 @@
 #include <vector>
 #include "TextureApp.h"
 
+#include <string.h>
+
 TextureApp::TextureApp() {};
 TextureApp::~TextureApp() {};
 void generatePlane(Mesh* plane)
@@ -91,6 +93,51 @@ Mesh* generateGrid(unsigned int rows, unsigned int cols)
 	return plane;
 }
 
+float Dylannoise(unsigned int id)
+{
+	std::vector<unsigned int>Randy
+	{
+		23, 90, 52, 04, 15, 13,
+		19, 23, 29, 31, 37, 03,
+		12, 61, 73, 01, 58, 14,
+		19, 43, 29, 31, 37, 04,
+		53, 33, 22, 64, 15, 13,
+		19, 53, 29, 31, 37, 78,
+		23, 24, 92, 84, 15, 13,
+		19, 63, 29, 31, 37, 26,
+		23, 71, 32, 24, 15, 13,
+		19, 83, 29, 31, 37, 56,
+		23, 98, 62, 64, 15, 13,
+		19, 93, 29, 31, 37, 67,
+		23, 67, 52, 44, 15, 13,
+		19, 43, 29, 31, 37, 91,
+		23, 71, 42, 94, 15, 13,
+		79, 14, 27, 36, 77, 18,
+		23, 11, 32, 14, 15, 13,
+		5, 33, 89, 61, 31, 49,
+	};
+
+	if (id > Randy.size())
+	{
+		id = Randy.size()/2;
+	}
+	auto anumber = Randy[id];
+	float noise = 0.0f;
+
+	for (int x = 0; x < anumber; x++)
+	{
+		noise += 0.005f;
+	}
+	for (int y = 0; y < anumber; y++)
+	{
+		noise += 0.004f;
+	}
+	for (int z = 0; z < anumber; z++)
+	{
+		noise -= 0.0001f;
+	}
+	return noise;
+}
 float* generatePerlin(unsigned int width, unsigned int height)
 {
 	int dims = 64;
@@ -107,7 +154,8 @@ float* generatePerlin(unsigned int width, unsigned int height)
 			for (int o = 0; o < octaves; ++o)
 			{
 				float freq = powf(2, (float)o);
-				float perlinSample = glm::perlin(glm::vec2((float)x, (float)y) * scale * freq) * 0.5f + 0.5f;
+				//float perlinSample = glm::perlin(glm::vec2((float)x, (float)y) * scale * freq) * 0.5f + 0.5f;
+				float perlinSample = Dylannoise(y);
 				perlinData[y * dims + x] += perlinSample * amplitude;
 				amplitude *= persistence;
 			}
@@ -219,7 +267,7 @@ void TextureApp::startup()
 	proj = glm::perspective(glm::quarter_pi<float>(), 1.f, 3.f, 1000.0f);
 
 	
-	this->plane_Mesh = generateGrid(25,25);
+	this->plane_Mesh = generateGrid(50,50);
 	/*generatePlane(this->plane_Mesh);*/
 
 	m_perlinShader = new Shader();
@@ -229,12 +277,13 @@ void TextureApp::startup()
 
 	m_texture = new Texture();
 	m_texture->generate2D(64, 64, generatePerlin(64, 64));
-	//m_texture->load("..//bin//textures//370z.jpg");
+	m_texture->load("..//bin//textures//water.jpg");
 }
-
+float scale = 0;
 glm::mat4 model = glm::mat4(1);
 void TextureApp::draw()
 {
+	glClearColor(0, 0, 0, 1);
 	glm::mat4 sphereModel = glm::mat4(1);
 	glm::mat4 planeModel = glm::mat4(1) * glm::scale(glm::vec3(100));
 
@@ -251,7 +300,8 @@ void TextureApp::draw()
 	auto textureWVPuniform = m_perlinShader->getUniform("WVP");
 
 	auto textureSampler2DUniform = m_perlinShader->getUniform("perlinTexture");
-
+	auto scaleUniform = m_perlinShader->getUniform("scale");
+	glUniform1f(scaleUniform, scale);
 	glUniform1i(textureSampler2DUniform, 0);
 	glUniformMatrix4fv(textureWVPuniform, 1, GL_FALSE, glm::value_ptr(mvp));
 	plane_Mesh->draw(GL_TRIANGLES);
@@ -262,7 +312,7 @@ void TextureApp::update(float deltaTime)
 {
 	if (glfwGetKey(m_window, GLFW_KEY_P))
 	{
-		view = glm::lookAt(glm::vec3(2.5f, 15, -5.1f), glm::vec3(12.5f, 0, 12.5f), glm::vec3(0, 1, 0));
+		view = glm::lookAt(glm::vec3(-18.5f, 35, -15.1f), glm::vec3(12.5f, 0, 12.5f), glm::vec3(0, 1, 0));
 	}
 
 	if (glfwGetKey(m_window, GLFW_KEY_KP_7))
@@ -272,6 +322,24 @@ void TextureApp::update(float deltaTime)
 		this->m_perlinShader->attach();
 	}
 
+	if (scale < -8)
+	{
+		scale = -2.2;
+	}
+		scale -= cosf(deltaTime) * 0.005;
+	
+		std::string SCALE = std::to_string(scale);
+
+		printf(SCALE.c_str());
+
+	//if (glfwGetKey(m_window, GLFW_KEY_KP_0))
+	//{
+	//	scale -= 0.05;
+	//}
+	//if (glfwGetKey(m_window, GLFW_KEY_KP_1))
+	//{
+	//	scale += 0.05;
+	//}
 }
 
 void TextureApp::shutdown()
